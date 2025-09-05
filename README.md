@@ -1,6 +1,6 @@
-# Repo Stats
+# 저장소 통계
 <p align="center">
-  <img src="https://flagcdn.com/us.svg" alt="English" width="24" height="16"> English | 
+  <img src="https://flagcdn.com/kr.svg" alt="한국어" width="24" height="16"> 한국어 | 
   <a href="README-CN.md"><img src="https://flagcdn.com/cn.svg" alt="中文" width="24" height="16"> 中文</a>
 </p>
 
@@ -25,36 +25,36 @@
     <img alt="Termix Banner" src=./repo-images/HeaderImage.png style="width: auto; height: auto;">  </a>
 </p>
 
-If you would like, you can support the project here!\
+프로젝트가 마음에 드신다면 여기에서 후원하실 수 있어요!\
 [![GitHub Sponsor](https://img.shields.io/badge/Sponsor-LukeGus-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/LukeGus)
 
-# Overview
+# 개요
 
 <p align="center">
   <a href="https://github.com/LukeGus/Termix">
     <img alt="Termix Banner" src=./public/icon.svg style="width: 250px; height: 250px;">  </a>
 </p>
 
-Termix is an open-source, forever-free, self-hosted all-in-one server management platform. It provides a web-based solution for managing your servers and infrastructure through a single, intuitive interface. Termix offers SSH terminal access, SSH tunneling capabilities, and remote file editing, with many more tools to come.
+Termix는 오픈 소스이자 영구 무료로 제공되는 자체 호스팅 올인원 서버 관리 플랫폼입니다. 하나의 직관적인 웹 인터페이스를 통해 서버와 인프라를 관리할 수 있는 솔루션을 제공합니다. Termix는 SSH 터미널 접속, SSH 터널링, 원격 파일 편집 기능을 제공하며, 앞으로 더 많은 도구들이 추가될 예정입니다.
 
-# Features
-- **SSH Terminal Access** - Full-featured terminal with split-screen support (up to 4 panels) and tab system
-- **SSH Tunnel Management** - Create and manage SSH tunnels with automatic reconnection and health monitoring
-- **Remote File Editor** - Edit files directly on remote servers with syntax highlighting, file management features (uploading, removing, renaming, deleting files)
-- **SSH Host Manager** - Save, organize, and manage your SSH connections with tags and folders
-- **Server Stats** - View CPU, memory, and HDD usage on any SSH server
-- **User Authentication** - Secure user management with admin controls and OIDC and 2FA (TOTP) support
-- **Modern UI** - Clean interface built with React, Tailwind CSS, and Shadcn
-- **Languages** - Built-in support for English and Chinese
+# 기능
+- **SSH 터미널 접속** - 최대 4분할 스플릿 화면과 탭 시스템을 갖춘 완전한 기능의 터미널
+- **SSH 터널 관리** - 자동 재연결 및 상태 모니터링을 포함한 SSH 터널 생성·관리
+- **원격 파일 편집기** - 구문 하이라이트 및 파일 업로드/이동/이름변경/삭제 등 파일 관리 기능과 함께 원격 서버의 파일을 직접 편집
+- **SSH 호스트 관리자** - 태그와 폴더로 SSH 연결을 저장, 구성, 관리
+- **서버 상태** - 어떤 SSH 서버든 CPU, 메모리, 디스크 사용량 확인
+- **사용자 인증** - 관리자 제어, OIDC, 2FA(TOTP)를 지원하는 보안 사용자 관리
+- **모던 UI** - React, Tailwind CSS, Shadcn으로 구축된 깔끔한 인터페이스
+- **언어** - 영어와 중국어 기본 지원
 
-# Planned Features
-- **Improved Admin Control** - Give more fine-grained control over user and admin permissions, share hosts, etc
-- **Theming** - Modify theming for all tools
-- **Improved Terminal Support** - Add more terminal protocols such as VNC and RDP (anyone who has experience in integrating RDP into a web-application similar to Apache Guacamole, please contact me by creating an issue)
-- **Mobile Support** - Support a mobile app or version of the Termix website to manage servers from your phone
+# 예정된 기능
+- **향상된 관리자 제어** - 사용자/관리자 권한에 대한 더 세밀한 제어, 호스트 공유 등
+- **테마 지원** - 모든 도구에 대해 테마 커스터마이징
+- **향상된 터미널 지원** - VNC, RDP 등 추가 프로토콜 지원(Guacamole 유사 웹 앱에 RDP 통합 경험이 있으시다면 이슈를 통해 연락 부탁드립니다)
+- **모바일 지원** - 휴대폰에서 서버를 관리할 수 있도록 모바일 앱 또는 Termix 웹사이트의 모바일 버전 지원
 
-# Installation
-Visit the Termix [Docs](https://docs.termix.site/install) for more information on how to install Termix. Otherwise, view a sample docker-compose file here:
+# 설치
+설치 방법은 Termix [문서](https://docs.termix.site/install)에서 확인하실 수 있습니다. 아래는 샘플 docker-compose 파일입니다:
 ```yaml
 services:
   termix:
@@ -73,10 +73,10 @@ volumes:
     driver: local 
 ```
 
-# Support
-If you need help with Termix, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the [GitHub](https://github.com/LukeGus/Termix/issues) repo.
+# 지원
+Termix 사용 중 도움이 필요하시면 [Discord](https://discord.gg/jVQGdvHDrf) 서버의 지원 채널에 참여해 주세요. 또한 [GitHub](https://github.com/LukeGus/Termix/issues) 저장소에서 이슈를 생성하거나 Pull Request를 보내실 수도 있습니다.
 
-# Show-off
+# 데모
 
 <p align="center">
   <img src="./repo-images/Image 1.png" width="400" alt="Termix Demo 1"/>
@@ -95,5 +95,5 @@ If you need help with Termix, you can join the [Discord](https://discord.gg/jVQG
   </video>
 </p>
 
-# License
-Distributed under the Apache License Version 2.0. See LICENSE for more information.
+# 라이선스
+Apache License Version 2.0 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참고하세요.

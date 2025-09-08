@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테마 시스템 쿠키 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 테마 시스템 쿠키 저장 테스트</h1>
+        <p>Termix 테마 시스템의 쿠키 저장/불러오기 기능을 테스트합니다.</p>
+
+        <div class="test-section">
+            <h3>1. 현재 쿠키 상태</h3>
+            <button onclick="showCurrentCookie()">현재 쿠키 확인</button>
+            <div id="current-cookie" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 테마 설정 저장 테스트</h3>
+            <button onclick="saveLight()">Light 모드 저장</button>
+            <button onclick="saveDark()">Dark 모드 저장</button>
+            <button onclick="saveSystem()">System 모드 저장</button>
+            <button onclick="saveCustom()">커스텀 설정 저장</button>
+            <div id="save-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 테마 설정 불러오기 테스트</h3>
+            <button onclick="loadTheme()">테마 설정 불러오기</button>
+            <div id="load-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 시스템 테마 감지</h3>
+            <button onclick="detectSystem()">시스템 테마 감지</button>
+            <div id="system-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 기존 기능 영향도 테스트</h3>
+            <button onclick="testExistingCookies()">기존 쿠키와의 독립성 확인</button>
+            <div id="independence-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. 쿠키 초기화</h3>
+            <button onclick="clearCookie()">테마 쿠키 삭제</button>
+            <div id="clear-result" class="result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 테마 유틸리티 함수들 (실제로는 import 할 것)
+        const THEME_COOKIE_NAME = 'termix-theme';
+        const THEME_COOKIE_EXPIRY_DAYS = 365;
+
+        const DEFAULT_THEME_SETTINGS = {
+            mode: 'system',
+            systemTheme: 'light',
+            customColors: {},
+            terminalTheme: 'default',
+            editorTheme: 'default',
+            lastUpdated: new Date().toISOString(),
+        };
+
+        function getThemeFromCookie() {
+            try {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .reduce((r, v) => {
+                        const parts = v.split('=');
+                        return parts[0] === THEME_COOKIE_NAME ? decodeURIComponent(parts[1]) : r;
+                    }, "");
+
+                if (!cookieValue) {
+                    return DEFAULT_THEME_SETTINGS;
+                }
+
+                const parsed = JSON.parse(cookieValue);
+                return {
+                    ...DEFAULT_THEME_SETTINGS,
+                    ...parsed,
+                    lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+                };
+            } catch (error) {
+                console.warn('Failed to parse theme cookie:', error);
+                return DEFAULT_THEME_SETTINGS;
+            }
+        }
+
+        function saveThemeToCookie(settings) {
+            try {
+                const currentSettings = getThemeFromCookie();
+                const updatedSettings = {
+                    ...currentSettings,
+                    ...settings,
+                    lastUpdated: new Date().toISOString(),
+                };
+
+                const jsonValue = JSON.stringify(updatedSettings);
+                const expires = new Date(Date.now() + THEME_COOKIE_EXPIRY_DAYS * 864e5).toUTCString();
+                
+                document.cookie = `${THEME_COOKIE_NAME}=${encodeURIComponent(jsonValue)}; expires=${expires}; path=/`;
+                return updatedSettings;
+            } catch (error) {
+                console.error('Failed to save theme to cookie:', error);
+                return null;
+            }
+        }
+
+        function detectSystemTheme() {
+            if (window.matchMedia) {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            return 'light';
+        }
+
+        function clearThemeCookie() {
+            document.cookie = `${THEME_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+        }
+
+        // 전역 함수들
+        window.showCurrentCookie = function() {
+            const result = document.getElementById('current-cookie');
+            const allCookies = document.cookie || '(빈 쿠키)';
+            result.innerHTML = `<strong>전체 쿠키:</strong><br>${allCookies}<br><br>`;
+            
+            const themeSettings = getThemeFromCookie();
+            result.innerHTML += `<strong>테마 설정:</strong><br>${JSON.stringify(themeSettings, null, 2)}`;
+        };
+
+        window.saveLight = function() {
+            const result = document.getElementById('save-result');
+            const saved = saveThemeToCookie({ mode: 'light' });
+            result.innerHTML = `<span class="success">✅ Light 모드 저장 완료</span><br>${JSON.stringify(saved, null, 2)}`;
+        };
+
+        window.saveDark = function() {
+            const result = document.getElementById('save-result');
+            const saved = saveThemeToCookie({ mode: 'dark', terminalTheme: 'dark-theme' });
+            result.innerHTML = `<span class="success">✅ Dark 모드 저장 완료</span><br>${JSON.stringify(saved, null, 2)}`;
+        };
+
+        window.saveSystem = function() {
+            const result = document.getElementById('save-result');
+            const saved = saveThemeToCookie({ mode: 'system' });
+            result.innerHTML = `<span class="success">✅ System 모드 저장 완료</span><br>${JSON.stringify(saved, null, 2)}`;
+        };
+
+        window.saveCustom = function() {
+            const result = document.getElementById('save-result');
+            const customSettings = {
+                mode: 'dark',
+                customColors: {
+                    primary: '#ff6b35',
+                    secondary: '#4ecdc4',
+                    accent: '#45b7d1'
+                },
+                terminalTheme: 'custom-dark',
+                editorTheme: 'monokai'
+            };
+            const saved = saveThemeToCookie(customSettings);
+            result.innerHTML = `<span class="success">✅ 커스텀 설정 저장 완료</span><br>${JSON.stringify(saved, null, 2)}`;
+        };
+
+        window.loadTheme = function() {
+            const result = document.getElementById('load-result');
+            const theme = getThemeFromCookie();
+            result.innerHTML = `<strong>불러온 테마 설정:</strong><br>${JSON.stringify(theme, null, 2)}`;
+        };
+
+        window.detectSystem = function() {
+            const result = document.getElementById('system-result');
+            const systemTheme = detectSystemTheme();
+            result.innerHTML = `<strong>감지된 시스템 테마:</strong> ${systemTheme}`;
+        };
+
+        window.testExistingCookies = function() {
+            const result = document.getElementById('independence-result');
+            
+            // 기존 쿠키 설정 (jwt 등)
+            document.cookie = 'jwt=test-jwt-token; path=/';
+            document.cookie = 'other-setting=test-value; path=/';
+            
+            // 테마 쿠키 저장
+            saveThemeToCookie({ mode: 'dark' });
+            
+            // 모든 쿠키 확인
+            const allCookies = document.cookie;
+            const hasJwt = allCookies.includes('jwt=test-jwt-token');
+            const hasOther = allCookies.includes('other-setting=test-value');
+            const hasTheme = allCookies.includes(THEME_COOKIE_NAME);
+            
+            if (hasJwt && hasOther && hasTheme) {
+                result.innerHTML = `<span class="success">✅ 모든 쿠키가 독립적으로 정상 작동</span><br>JWT: ${hasJwt}<br>기타: ${hasOther}<br>테마: ${hasTheme}`;
+            } else {
+                result.innerHTML = `<span class="error">❌ 쿠키 간섭 발생</span><br>JWT: ${hasJwt}<br>기타: ${hasOther}<br>테마: ${hasTheme}`;
+            }
+        };
+
+        window.clearCookie = function() {
+            const result = document.getElementById('clear-result');
+            clearThemeCookie();
+            result.innerHTML = '<span class="success">✅ 테마 쿠키 삭제 완료</span>';
+        };
+
+        // 페이지 로드 시 초기 상태 표시
+        window.addEventListener('load', () => {
+            showCurrentCookie();
+        });
+    </script>
+</body>
+</html>

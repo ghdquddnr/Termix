@@ -12,7 +12,6 @@ import { Globe } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文' },
   { code: 'ko', name: 'Korean', nativeName: '한국어' },
 ];
 

@@ -1,7 +1,6 @@
 # 저장소 통계
 <p align="center">
-  <img src="https://flagcdn.com/kr.svg" alt="한국어" width="24" height="16"> 한국어 | 
-  <a href="README-CN.md"><img src="https://flagcdn.com/cn.svg" alt="中文" width="24" height="16"> 中文</a>
+  <img src="https://flagcdn.com/kr.svg" alt="한국어" width="24" height="16"> 한국어
 </p>
 
 
@@ -45,7 +44,7 @@ Termix는 오픈 소스이자 영구 무료로 제공되는 자체 호스팅 올
 - **서버 상태** - 어떤 SSH 서버든 CPU, 메모리, 디스크 사용량 확인
 - **사용자 인증** - 관리자 제어, OIDC, 2FA(TOTP)를 지원하는 보안 사용자 관리
 - **모던 UI** - React, Tailwind CSS, Shadcn으로 구축된 깔끔한 인터페이스
-- **언어** - 영어와 중국어 기본 지원
+- **언어** - 다국어 지원
 
 # 예정된 기능
 - **향상된 관리자 제어** - 사용자/관리자 권한에 대한 더 세밀한 제어, 호스트 공유 등

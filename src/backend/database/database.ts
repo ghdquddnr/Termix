@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import userRoutes from './routes/users.js';
 import sshRoutes from './routes/ssh.js';
 import alertRoutes from './routes/alerts.js';
+import themeRoutes from './routes/themes.js';
 import chalk from 'chalk';
 import cors from 'cors';
 import fetch from 'node-fetch';
@@ -238,6 +239,7 @@ app.get('/releases/rss', async (req, res) => {
 app.use('/users', userRoutes);
 app.use('/ssh', sshRoutes);
 app.use('/alerts', alertRoutes);
+app.use('/themes', themeRoutes);
 
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', err);

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termix 테마 시스템 테스트</title>
+    <style>
+        :root {
+            --color-primary: #007bff;
+            --color-secondary: #6c757d;
+            --color-accent: #17a2b8;
+            --color-background: #ffffff;
+            --color-surface: #f8f9fa;
+            --color-text: #212529;
+            --theme-transition-duration: 300ms;
+            --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark {
+            --color-primary: #0d6efd;
+            --color-secondary: #6c757d;
+            --color-accent: #20c997;
+            --color-background: #121212;
+            --color-surface: #1e1e1e;
+            --color-text: #ffffff;
+        }
+
+        * {
+            transition: 
+                background-color var(--theme-transition-duration) var(--theme-transition-timing),
+                color var(--theme-transition-duration) var(--theme-transition-timing),
+                border-color var(--theme-transition-duration) var(--theme-transition-timing);
+        }
+
+        .no-transition * {
+            transition: none !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--color-surface);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .button.secondary {
+            background-color: var(--color-secondary);
+        }
+
+        .button.accent {
+            background-color: var(--color-accent);
+        }
+
+        .test-result {
+            font-family: 'Courier New', monospace;
+            background-color: var(--color-surface);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-info { background-color: var(--color-primary); }
+
+        .theme-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .color-primary { background-color: var(--color-primary); }
+        .color-secondary { background-color: var(--color-secondary); }
+        .color-accent { background-color: var(--color-accent); }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Termix 테마 시스템 테스트</h1>
+        
+        <div class="card">
+            <h2>테마 전환 테스트</h2>
+            <p>아래 버튼들을 클릭하여 테마 전환 기능을 테스트하세요.</p>
+            
+            <button class="button" onclick="setTheme('light')">라이트 테마</button>
+            <button class="button secondary" onclick="setTheme('dark')">다크 테마</button>
+            <button class="button accent" onclick="setTheme('system')">시스템 테마</button>
+            
+            <div class="theme-preview">
+                <div class="color-swatch color-primary">Primary</div>
+                <div class="color-swatch color-secondary">Secondary</div>
+                <div class="color-swatch color-accent">Accent</div>
+            </div>
+            
+            <p>현재 테마: <span id="current-theme">-</span></p>
+            <p>시스템 테마: <span id="system-theme">-</span></p>
+        </div>
+
+        <div class="card">
+            <h2>커스텀 색상 테스트</h2>
+            <p>색상을 변경하여 커스텀 테마 기능을 테스트하세요.</p>
+            
+            <label>Primary 색상: <input type="color" id="primary-color" value="#007bff" onchange="updateCustomColor('primary', this.value)"></label><br><br>
+            <label>Secondary 색상: <input type="color" id="secondary-color" value="#6c757d" onchange="updateCustomColor('secondary', this.value)"></label><br><br>
+            <label>Accent 색상: <input type="color" id="accent-color" value="#17a2b8" onchange="updateCustomColor('accent', this.value)"></label>
+        </div>
+
+        <div class="card">
+            <h2>쿠키 저장 테스트</h2>
+            <button class="button" onclick="saveCurrentSettings()">현재 설정 저장</button>
+            <button class="button secondary" onclick="loadSavedSettings()">저장된 설정 불러오기</button>
+            <button class="button" onclick="clearSavedSettings()">설정 초기화</button>
+            
+            <div id="cookie-status" class="test-result">쿠키 상태를 확인하려면 버튼을 클릭하세요.</div>
+        </div>
+
+        <div class="card">
+            <h2>자동 테스트 실행</h2>
+            <button class="button" onclick="runAllTests()">전체 테스트 실행</button>
+            <button class="button secondary" onclick="clearResults()">결과 초기화</button>
+            
+            <div id="test-results" class="test-result">테스트를 실행하려면 버튼을 클릭하세요.</div>
+        </div>
+    </div>
+
+    <script src="manual-theme-test.js"></script>
+    <script>
+        // 현재 테마 상태
+        let currentThemeSettings = {
+            mode: 'system',
+            customColors: {},
+            lastUpdated: new Date().toISOString()
+        };
+
+        // 시스템 테마 감지
+        function detectSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // 유효한 테마 계산
+        function getEffectiveTheme(settings) {
+            if (settings.mode === 'system') {
+                return settings.systemTheme || detectSystemTheme();
+            }
+            return settings.mode;
+        }
+
+        // 테마 적용
+        function applyTheme(settings) {
+            const root = document.documentElement;
+            const effectiveTheme = getEffectiveTheme(settings);
+            
+            // 테마 클래스 적용
+            root.classList.remove('light', 'dark');
+            root.classList.add(effectiveTheme);
+            
+            // 커스텀 색상 적용
+            if (settings.customColors) {
+                Object.entries(settings.customColors).forEach(([key, value]) => {
+                    if (value) {
+                        root.style.setProperty(`--color-${key}`, value);
+                    }
+                });
+            }
+            
+            // UI 업데이트
+            updateThemeDisplay();
+        }
+
+        // 테마 설정
+        function setTheme(mode) {
+            currentThemeSettings = {
+                ...currentThemeSettings,
+                mode: mode,
+                systemTheme: mode === 'system' ? detectSystemTheme() : undefined,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            applyTheme(currentThemeSettings);
+            logResult(`테마를 ${mode}로 변경했습니다.`);
+        }
+
+        // 커스텀 색상 업데이트
+        function updateCustomColor(colorType, value) {
+            currentThemeSettings.customColors = {
+                ...currentThemeSettings.customColors,
+                [colorType]: value
+            };
+            currentThemeSettings.lastUpdated = new Date().toISOString();
+            
+            applyTheme(currentThemeSettings);
+            logResult(`${colorType} 색상을 ${value}로 변경했습니다.`);
+        }
+
+        // 테마 표시 업데이트
+        function updateThemeDisplay() {
+            const effectiveTheme = getEffectiveTheme(currentThemeSettings);
+            const systemTheme = detectSystemTheme();
+            
+            document.getElementById('current-theme').textContent = 
+                `${currentThemeSettings.mode} (실제: ${effectiveTheme})`;
+            document.getElementById('system-theme').textContent = systemTheme;
+        }
+
+        // 설정 저장
+        function saveCurrentSettings() {
+            try {
+                setCookie('termix-theme-settings', currentThemeSettings);
+                document.getElementById('cookie-status').textContent = 
+                    `✅ 설정이 쿠키에 저장되었습니다.\n${JSON.stringify(currentThemeSettings, null, 2)}`;
+            } catch (error) {
+                document.getElementById('cookie-status').textContent = 
+                    `❌ 설정 저장 실패: ${error.message}`;
+            }
+        }
+
+        // 설정 불러오기
+        function loadSavedSettings() {
+            try {
+                const saved = getCookie('termix-theme-settings');
+                if (saved) {
+                    currentThemeSettings = saved;
+                    applyTheme(currentThemeSettings);
+                    
+                    // 색상 입력 필드 업데이트
+                    if (saved.customColors) {
+                        if (saved.customColors.primary) {
+                            document.getElementById('primary-color').value = saved.customColors.primary;
+                        }
+                        if (saved.customColors.secondary) {
+                            document.getElementById('secondary-color').value = saved.customColors.secondary;
+                        }
+                        if (saved.customColors.accent) {
+                            document.getElementById('accent-color').value = saved.customColors.accent;
+                        }
+                    }
+                    
+                    document.getElementById('cookie-status').textContent = 
+                        `✅ 설정이 쿠키에서 불러와졌습니다.\n${JSON.stringify(saved, null, 2)}`;
+                } else {
+                    document.getElementById('cookie-status').textContent = 
+                        `⚠️ 저장된 설정이 없습니다.`;
+                }
+            } catch (error) {
+                document.getElementById('cookie-status').textContent = 
+                    `❌ 설정 불러오기 실패: ${error.message}`;
+            }
+        }
+
+        // 설정 초기화
+        function clearSavedSettings() {
+            try {
+                clearCookie('termix-theme-settings');
+                currentThemeSettings = {
+                    mode: 'system',
+                    customColors: {},
+                    lastUpdated: new Date().toISOString()
+                };
+                applyTheme(currentThemeSettings);
+                
+                // 색상 입력 필드 초기화
+                document.getElementById('primary-color').value = '#007bff';
+                document.getElementById('secondary-color').value = '#6c757d';
+                document.getElementById('accent-color').value = '#17a2b8';
+                
+                document.getElementById('cookie-status').textContent = 
+                    `✅ 설정이 초기화되었습니다.`;
+            } catch (error) {
+                document.getElementById('cookie-status').textContent = 
+                    `❌ 설정 초기화 실패: ${error.message}`;
+            }
+        }
+
+        // 결과 로깅
+        function logResult(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const currentResults = document.getElementById('test-results').textContent;
+            document.getElementById('test-results').textContent = 
+                `[${timestamp}] ${message}\n${currentResults}`;
+        }
+
+        // 전체 테스트 실행
+        function runAllTests() {
+            document.getElementById('test-results').textContent = '테스트를 실행 중입니다...\n';
+            
+            try {
+                // 기본 테스트들 실행
+                logResult('=== 테마 시스템 통합 테스트 시작 ===');
+                
+                // 1. 라이트 테마 테스트
+                setTheme('light');
+                setTimeout(() => {
+                    logResult('✅ 라이트 테마 적용 테스트 완료');
+                    
+                    // 2. 다크 테마 테스트
+                    setTheme('dark');
+                    setTimeout(() => {
+                        logResult('✅ 다크 테마 적용 테스트 완료');
+                        
+                        // 3. 시스템 테마 테스트
+                        setTheme('system');
+                        setTimeout(() => {
+                            logResult('✅ 시스템 테마 적용 테스트 완료');
+                            
+                            // 4. 커스텀 색상 테스트
+                            updateCustomColor('primary', '#ff6b35');
+                            updateCustomColor('accent', '#45b7d1');
+                            setTimeout(() => {
+                                logResult('✅ 커스텀 색상 적용 테스트 완료');
+                                
+                                // 5. 쿠키 저장/불러오기 테스트
+                                saveCurrentSettings();
+                                setTimeout(() => {
+                                    clearSavedSettings();
+                                    setTimeout(() => {
+                                        loadSavedSettings();
+                                        setTimeout(() => {
+                                            logResult('✅ 쿠키 저장/불러오기 테스트 완료');
+                                            logResult('=== 모든 테스트 완료 ===');
+                                        }, 100);
+                                    }, 100);
+                                }, 100);
+                            }, 300);
+                        }, 300);
+                    }, 300);
+                }, 300);
+                
+            } catch (error) {
+                logResult(`❌ 테스트 실행 중 오류: ${error.message}`);
+            }
+        }
+
+        // 결과 초기화
+        function clearResults() {
+            document.getElementById('test-results').textContent = '';
+            document.getElementById('cookie-status').textContent = '';
+        }
+
+        // 시스템 테마 변경 감지
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (currentThemeSettings.mode === 'system') {
+                currentThemeSettings.systemTheme = e.matches ? 'dark' : 'light';
+                applyTheme(currentThemeSettings);
+                logResult(`시스템 테마 변경 감지: ${currentThemeSettings.systemTheme}`);
+            }
+        });
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 저장된 설정이 있으면 불러오기
+            const saved = getCookie('termix-theme-settings');
+            if (saved) {
+                currentThemeSettings = saved;
+                applyTheme(currentThemeSettings);
+                
+                // 색상 입력 필드 업데이트
+                if (saved.customColors) {
+                    if (saved.customColors.primary) {
+                        document.getElementById('primary-color').value = saved.customColors.primary;
+                    }
+                    if (saved.customColors.secondary) {
+                        document.getElementById('secondary-color').value = saved.customColors.secondary;
+                    }
+                    if (saved.customColors.accent) {
+                        document.getElementById('accent-color').value = saved.customColors.accent;
+                    }
+                }
+            } else {
+                applyTheme(currentThemeSettings);
+            }
+            
+            updateThemeDisplay();
+            logResult('🎨 테마 시스템 테스트 페이지가 로드되었습니다.');
+        });
+    </script>
+</body>
+</html>

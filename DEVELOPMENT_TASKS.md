@@ -22,15 +22,15 @@
 - [x] **커밋**: `feat: implement optional theme preset APIs`
 
 #### 프론트엔드 테마 시스템
-- [ ] Shadcn/ui 테마 시스템 확장 (`theme-provider.tsx` 개선)
-- [ ] CSS 변수 기반 다크/라이트 테마 정의
-- [ ] 테마 컨텍스트 및 훅 구현 (`useTheme`)
-- [ ] 쿠키 기반 테마 상태 관리 구현 (`getCookie`, `setCookie` 활용)
-- [ ] 시스템 테마 자동 감지 기능 (`prefers-color-scheme`)
-- [ ] 테마 전환 애니메이션 구현
-- [ ] 초기 로딩 시 쿠키에서 테마 설정 복원
-- [ ] **테스트**: 테마 전환 및 쿠키 저장 기능 테스트
-- [ ] **커밋**: `feat: implement theme system with cookie storage`
+- [x] Shadcn/ui 테마 시스템 확장 (`theme-provider.tsx` 개선)
+- [x] CSS 변수 기반 다크/라이트 테마 정의
+- [x] 테마 컨텍스트 및 훅 구현 (`useTheme`)
+- [x] 쿠키 기반 테마 상태 관리 구현 (`getCookie`, `setCookie` 활용)
+- [x] 시스템 테마 자동 감지 기능 (`prefers-color-scheme`)
+- [x] 테마 전환 애니메이션 구현
+- [x] 초기 로딩 시 쿠키에서 테마 설정 복원
+- [x] **테스트**: 테마 전환 및 쿠키 저장 기능 테스트
+- [x] **커밋**: `feat: implement theme system with cookie storage`
 
 #### 테마 설정 UI
 - [ ] 테마 설정 페이지 컴포넌트 (`ThemeSettings.tsx`)

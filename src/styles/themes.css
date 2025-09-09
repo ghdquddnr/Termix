@@ -1,0 +1,228 @@
+/* Termix Theme System - CSS Variables for Dynamic Theming */
+
+/* Base CSS Variables for Light Theme */
+:root {
+  /* Primary Colors */
+  --color-primary: #007bff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #6c757d;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #17a2b8;
+  --color-accent-foreground: #ffffff;
+
+  /* Background Colors */
+  --color-background: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-card: #ffffff;
+  --color-popover: #ffffff;
+  --color-muted: #f8f9fa;
+  --color-muted-foreground: #6c757d;
+
+  /* Text Colors */
+  --color-foreground: #212529;
+  --color-destructive: #dc3545;
+  --color-destructive-foreground: #ffffff;
+
+  /* Border Colors */
+  --color-border: #dee2e6;
+  --color-input: #ced4da;
+  --color-ring: #007bff;
+
+  /* Terminal Theme Variables */
+  --terminal-background: #ffffff;
+  --terminal-foreground: #212529;
+  --terminal-cursor: #007bff;
+  --terminal-selection: rgba(0, 123, 255, 0.3);
+
+  /* Editor Theme Variables */
+  --editor-background: #ffffff;
+  --editor-foreground: #212529;
+  --editor-line-number: #6c757d;
+  --editor-selection: rgba(0, 123, 255, 0.3);
+
+  /* Transition Variables */
+  --theme-transition-duration: 0.3s;
+  --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Theme Variables */
+.dark {
+  /* Primary Colors */
+  --color-primary: #0d6efd;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #6c757d;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #20c997;
+  --color-accent-foreground: #000000;
+
+  /* Background Colors */
+  --color-background: #121212;
+  --color-surface: #1e1e1e;
+  --color-card: #1e1e1e;
+  --color-popover: #1e1e1e;
+  --color-muted: #2d2d2d;
+  --color-muted-foreground: #a1a1aa;
+
+  /* Text Colors */
+  --color-foreground: #ffffff;
+  --color-destructive: #dc3545;
+  --color-destructive-foreground: #ffffff;
+
+  /* Border Colors */
+  --color-border: #404040;
+  --color-input: #404040;
+  --color-ring: #0d6efd;
+
+  /* Terminal Theme Variables */
+  --terminal-background: #1e1e1e;
+  --terminal-foreground: #ffffff;
+  --terminal-cursor: #20c997;
+  --terminal-selection: rgba(32, 201, 151, 0.3);
+
+  /* Editor Theme Variables */
+  --editor-background: #1e1e1e;
+  --editor-foreground: #ffffff;
+  --editor-line-number: #6c757d;
+  --editor-selection: rgba(32, 201, 151, 0.3);
+}
+
+/* Termix Custom Theme */
+.termix-theme {
+  /* Primary Colors */
+  --color-primary: #00d4aa;
+  --color-primary-foreground: #0f172a;
+  --color-secondary: #1e3a8a;
+  --color-secondary-foreground: #f1f5f9;
+  --color-accent: #f59e0b;
+  --color-accent-foreground: #0f172a;
+
+  /* Background Colors */
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-card: #1e293b;
+  --color-popover: #1e293b;
+  --color-muted: #334155;
+  --color-muted-foreground: #94a3b8;
+
+  /* Text Colors */
+  --color-foreground: #f1f5f9;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  /* Border Colors */
+  --color-border: #475569;
+  --color-input: #475569;
+  --color-ring: #00d4aa;
+
+  /* Terminal Theme Variables */
+  --terminal-background: #0f172a;
+  --terminal-foreground: #f1f5f9;
+  --terminal-cursor: #00d4aa;
+  --terminal-selection: rgba(0, 212, 170, 0.3);
+
+  /* Editor Theme Variables */
+  --editor-background: #0f172a;
+  --editor-foreground: #f1f5f9;
+  --editor-line-number: #94a3b8;
+  --editor-selection: rgba(0, 212, 170, 0.3);
+}
+
+/* Smooth Transitions for Theme Changes */
+* {
+  transition: 
+    background-color var(--theme-transition-duration) var(--theme-transition-timing),
+    color var(--theme-transition-duration) var(--theme-transition-timing),
+    border-color var(--theme-transition-duration) var(--theme-transition-timing);
+}
+
+/* Prevent transitions on page load */
+.no-transition * {
+  transition: none !important;
+}
+
+/* Terminal component styling */
+.terminal {
+  background-color: var(--terminal-background);
+  color: var(--terminal-foreground);
+  border: 1px solid var(--color-border);
+}
+
+.terminal-cursor {
+  background-color: var(--terminal-cursor);
+}
+
+.terminal-selection {
+  background-color: var(--terminal-selection);
+}
+
+/* Editor component styling */
+.editor {
+  background-color: var(--editor-background);
+  color: var(--editor-foreground);
+  border: 1px solid var(--color-border);
+}
+
+.editor-line-number {
+  color: var(--editor-line-number);
+}
+
+.editor-selection {
+  background-color: var(--editor-selection);
+}
+
+/* Theme-aware components */
+.theme-card {
+  background-color: var(--color-card);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+}
+
+.theme-button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: 1px solid var(--color-primary);
+}
+
+.theme-button:hover {
+  opacity: 0.9;
+}
+
+.theme-input {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-input);
+}
+
+.theme-input:focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 2px rgba(var(--color-ring), 0.2);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #000000;
+    --color-foreground: #000000;
+  }
+  
+  .dark {
+    --color-border: #ffffff;
+    --color-foreground: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  :root {
+    --color-background: #ffffff;
+    --color-foreground: #000000;
+    --color-border: #000000;
+  }
+}

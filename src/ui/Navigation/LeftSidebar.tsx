@@ -3,7 +3,7 @@ import {
     Computer,
     Server,
     File,
-    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight
+    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -131,6 +131,17 @@ export function LeftSidebar({
             return;
         }
         const id = addTab({type: 'admin'} as any);
+        setCurrentTab(id);
+    };
+
+    const processMonitorTab = tabList.find((t) => t.type === 'process_monitor');
+    const openProcessMonitorTab = () => {
+        if (isSplitScreenActive) return;
+        if (processMonitorTab) {
+            setCurrentTab(processMonitorTab.id);
+            return;
+        }
+        const id = addTab({type: 'process_monitor', title: '프로세스 모니터링'} as any);
         setCurrentTab(id);
     };
 
@@ -299,6 +310,12 @@ export function LeftSidebar({
                                     title={sshManagerTab ? t('interface.sshManagerAlreadyOpen') : isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <HardDrive strokeWidth="2.5"/>
                                 {t('nav.hostManager')}
+                            </Button>
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                                    onClick={openProcessMonitorTab} disabled={!!processMonitorTab || isSplitScreenActive}
+                                    title={processMonitorTab ? '프로세스 모니터링이 이미 열려있습니다' : isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <Activity strokeWidth="2.5"/>
+                                프로세스 모니터링
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

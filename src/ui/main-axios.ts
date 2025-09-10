@@ -229,6 +229,11 @@ export const authApi = createApiInstance(
     isDev ? 'http://localhost:8081' : ''
 );
 
+// Process Monitoring API (port 8081) - process monitoring and control
+export const monitoringApi = createApiInstance(
+    isDev ? 'http://localhost:8081/monitoring' : '/monitoring'
+);
+
 // ============================================================================
 // ERROR HANDLING
 // ============================================================================
@@ -1000,5 +1005,113 @@ export async function getDatabaseHealth(): Promise<any> {
         return response.data;
     } catch (error) {
         handleApiError(error, 'check database health');
+    }
+}
+
+// ============================================================================
+// PROCESS MONITORING
+// ============================================================================
+
+import {
+    ProcessListResponse,
+    ProcessListOptions,
+    ProcessInfo,
+    ProcessTerminationResponse,
+    ProcessPriorityResponse,
+    HostInfo,
+    SystemInfo,
+    ProcessSignal
+} from '../types/process-monitoring';
+
+export async function getMonitoringHosts(): Promise<HostInfo[]> {
+    try {
+        const response = await monitoringApi.get('/hosts');
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch monitoring hosts');
+    }
+}
+
+export async function getProcessList(
+    hostId: string, 
+    options: ProcessListOptions = {}
+): Promise<ProcessListResponse> {
+    try {
+        const params = new URLSearchParams();
+        
+        if (options.sortBy) params.append('sortBy', options.sortBy);
+        if (options.sortOrder) params.append('sortOrder', options.sortOrder);
+        if (options.limit) params.append('limit', options.limit.toString());
+        if (options.offset) params.append('offset', options.offset.toString());
+        
+        // 필터 파라미터 추가
+        if (options.filter) {
+            const filter = options.filter;
+            if (filter.user) params.append('user', filter.user);
+            if (filter.command) params.append('command', filter.command);
+            if (filter.state) params.append('state', filter.state);
+            if (filter.minCpu !== undefined) params.append('minCpu', filter.minCpu.toString());
+            if (filter.maxCpu !== undefined) params.append('maxCpu', filter.maxCpu.toString());
+            if (filter.minMemory !== undefined) params.append('minMemory', filter.minMemory.toString());
+            if (filter.maxMemory !== undefined) params.append('maxMemory', filter.maxMemory.toString());
+            if (filter.excludeKernel) params.append('excludeKernel', 'true');
+            if (filter.excludeZombies) params.append('excludeZombies', 'true');
+        }
+        
+        const queryString = params.toString();
+        const url = `/processes/${hostId}${queryString ? '?' + queryString : ''}`;
+        
+        const response = await monitoringApi.get(url);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch process list');
+    }
+}
+
+export async function getProcessDetails(hostId: string, pid: number): Promise<ProcessInfo> {
+    try {
+        const response = await monitoringApi.get(`/processes/${hostId}/${pid}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch process details');
+    }
+}
+
+export async function getSystemInfo(hostId: string): Promise<SystemInfo & { hostname: string; timestamp: string }> {
+    try {
+        const response = await monitoringApi.get(`/system/${hostId}`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch system information');
+    }
+}
+
+export async function terminateProcess(
+    hostId: string, 
+    pid: number, 
+    signal: ProcessSignal = 'TERM'
+): Promise<ProcessTerminationResponse> {
+    try {
+        const response = await monitoringApi.delete(`/processes/${hostId}/${pid}`, {
+            data: { signal }
+        });
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'terminate process');
+    }
+}
+
+export async function changeProcessPriority(
+    hostId: string, 
+    pid: number, 
+    priority: number
+): Promise<ProcessPriorityResponse> {
+    try {
+        const response = await monitoringApi.patch(`/processes/${hostId}/${pid}/priority`, {
+            priority
+        });
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'change process priority');
     }
 }

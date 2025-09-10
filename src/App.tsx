@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { getUserInfo } from "@/ui/main-axios.ts";
 import { ThemeSettings } from "@/components/theme/ThemeSettings";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ProcessMonitor } from "@/components/process/ProcessMonitor";
 
 function getCookie(name: string) {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -91,6 +92,7 @@ function AppContent() {
     const showAdmin = currentTabData?.type === 'admin';
     const showProfile = currentTabData?.type === 'profile';
     const showThemeSettings = currentTabData?.type === 'theme_settings';
+    const showProcessMonitor = currentTabData?.type === 'process_monitor';
 
     return (
         <div>
@@ -222,6 +224,20 @@ function AppContent() {
                         }}>
                             <ThemeSettings />
                         </div>
+                    </div>
+
+                    <div
+                        className="h-screen w-full"
+                        style={{
+                            visibility: showProcessMonitor ? "visible" : "hidden",
+                            pointerEvents: showProcessMonitor ? "auto" : "none",
+                            height: showProcessMonitor ? "100vh" : 0,
+                            width: showProcessMonitor ? "100%" : 0,
+                            position: showProcessMonitor ? "static" : "absolute",
+                            overflow: "auto",
+                        }}
+                    >
+                        <ProcessMonitor isTopbarOpen={isTopbarOpen} />
                     </div>
 
                     <TopNavbar isTopbarOpen={isTopbarOpen} setIsTopbarOpen={setIsTopbarOpen}/>

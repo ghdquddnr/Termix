@@ -71,7 +71,7 @@
 - [x] `ps aux` 명령어 결과 파싱 함수 구현
 - [x] 프로세스 정보 타입 정의 (TypeScript 인터페이스)
 - [x] **테스트**: 기본 프로세스 API 테스트 수행
-- [ ] **커밋**: `feat: implement basic process monitoring API`
+- [x] **커밋**: `feat: implement basic process monitoring API`
 - [ ] 프로세스 종료 API 엔드포인트 구현 (`DELETE /api/monitoring/processes/:hostId/:pid`)
 - [ ] 프로세스 우선순위 변경 API 구현 (`PATCH /api/monitoring/processes/:hostId/:pid/priority`)
 - [ ] API 에러 핸들링 및 유효성 검사 구현

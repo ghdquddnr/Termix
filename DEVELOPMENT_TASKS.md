@@ -53,11 +53,11 @@
 - [x] **커밋**: `feat: apply theme system to all components`
 
 #### 성능 최적화
-- [ ] 테마 변경 시 깜빡임 방지 최적화
-- [ ] CSS 변수 캐싱 및 최적화
-- [ ] 테마 관련 번들 크기 최적화
-- [ ] **테스트**: 테마 성능 테스트
-- [ ] **커밋**: `perf: optimize theme system performance`
+- [x] 테마 변경 시 깜빡임 방지 최적화
+- [x] CSS 변수 캐싱 및 최적화
+- [x] 테마 관련 번들 크기 최적화
+- [x] **테스트**: 테마 성능 테스트
+- [x] **커밋**: `perf: optimize theme system performance`
 
 ---
 

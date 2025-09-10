@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {useSidebar} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button.tsx";
-import {ChevronDown, ChevronUpIcon, Hammer} from "lucide-react";
+import {ChevronDown, ChevronUpIcon, Hammer, Settings} from "lucide-react";
 import {Tab} from "@/ui/Navigation/Tabs/Tab.tsx";
 import {useTabs} from "@/ui/Navigation/Tabs/TabContext.tsx";
 import {
@@ -14,6 +14,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 import {useTranslation} from "react-i18next";
+import {ThemeToggle} from "@/components/theme/ThemeToggle";
 
 interface TopNavbarProps {
     isTopbarOpen: boolean;
@@ -22,7 +23,7 @@ interface TopNavbarProps {
 
 export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): React.ReactElement {
     const {state} = useSidebar();
-    const {tabs, currentTab, setCurrentTab, setSplitScreenTab, removeTab, allSplitScreenTab} = useTabs() as any;
+    const {tabs, currentTab, setCurrentTab, setSplitScreenTab, removeTab, allSplitScreenTab, addTab} = useTabs() as any;
     const leftPosition = state === "collapsed" ? "26px" : "264px";
     const {t} = useTranslation();
 
@@ -203,6 +204,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
     const currentTabIsHome = currentTabObj?.type === 'home';
     const currentTabIsSshManager = currentTabObj?.type === 'ssh_manager';
     const currentTabIsAdmin = currentTabObj?.type === 'admin';
+    const currentTabIsThemeSettings = currentTabObj?.type === 'theme_settings';
 
     const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal');
 
@@ -216,6 +218,13 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
     const updateRightClickCopyPaste = (checked: boolean) => {
         document.cookie = `rightClickCopyPaste=${checked}; expires=2147483647; path=/`;
     }
+
+    const handleOpenThemeSettings = () => {
+        addTab({
+            type: 'theme_settings',
+            title: '테마 설정'
+        });
+    };
 
     return (
         <div>
@@ -241,10 +250,11 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         const isFileManager = tab.type === 'file_manager';
                         const isSshManager = tab.type === 'ssh_manager';
                         const isAdmin = tab.type === 'admin';
+                        const isThemeSettings = tab.type === 'theme_settings';
                         const isSplittable = isTerminal || isServer || isFileManager;
                         const isSplitButtonDisabled = (isActive && !isSplitScreenActive) || ((allSplitScreenTab?.length || 0) >= 3 && !isSplit);
-                        const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin;
-                        const disableActivate = isSplit || ((tab.type === 'home' || tab.type === 'ssh_manager' || tab.type === 'admin') && isSplitScreenActive);
+                        const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin || currentTabIsThemeSettings;
+                        const disableActivate = isSplit || ((tab.type === 'home' || tab.type === 'ssh_manager' || tab.type === 'admin' || tab.type === 'theme_settings') && isSplitScreenActive);
                         const disableClose = (isSplitScreenActive && isActive) || isSplit;
                         return (
                             <Tab
@@ -253,10 +263,10 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                 title={tab.title}
                                 isActive={isActive}
                                 onActivate={() => handleTabActivate(tab.id)}
-                                onClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin ? () => handleTabClose(tab.id) : undefined}
+                                onClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings ? () => handleTabClose(tab.id) : undefined}
                                 onSplit={isSplittable ? () => handleTabSplit(tab.id) : undefined}
                                 canSplit={isSplittable}
-                                canClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin}
+                                canClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings}
                                 disableActivate={disableActivate}
                                 disableSplit={disableSplit}
                                 disableClose={disableClose}
@@ -266,6 +276,21 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                 </div>
 
                 <div className="flex items-center justify-center gap-2 flex-1 px-2">
+                    <ThemeToggle 
+                        variant="dropdown" 
+                        size="sm" 
+                        className="w-[30px] h-[30px]"
+                    />
+
+                    <Button
+                        variant="outline"
+                        className="w-[30px] h-[30px]"
+                        title="테마 설정"
+                        onClick={handleOpenThemeSettings}
+                    >
+                        <Settings className="h-4 w-4"/>
+                    </Button>
+
                     <Button
                         variant="outline"
                         className="w-[30px] h-[30px]"

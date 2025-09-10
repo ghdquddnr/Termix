@@ -1,8 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {HomepageAuth} from "@/ui/Homepage/HomepageAuth.tsx";
-import {HomepageUpdateLog} from "@/ui/Homepage/HompageUpdateLog.tsx";
 import {HomepageAlertManager} from "@/ui/Homepage/HomepageAlertManager.tsx";
-import {Button} from "@/components/ui/button.tsx";
 import { getUserInfo, getDatabaseHealth } from "@/ui/main-axios.ts";
 import {useTranslation} from "react-i18next";
 
@@ -105,58 +103,11 @@ export function Homepage({
                         top: `${topOffset}px`, 
                         height: `calc(100% - ${topOffset}px)` 
                     }}>
-                    <div className="flex flex-row items-center justify-center gap-8 relative z-10">
-                        <div className="flex flex-col items-center gap-6 w-[400px]">
-                            <div
-                                className="text-center bg-[#18181b] border-2 border-[#303032] rounded-lg p-6 w-full shadow-lg">
-                                <h3 className="text-xl font-bold mb-3 text-white">{t('homepage.loggedInTitle')}</h3>
-                                <p className="text-gray-300 leading-relaxed">
-                                    {t('homepage.loggedInMessage')}
-                                </p>
-                            </div>
-
-                            <div className="flex flex-row items-center gap-3">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-sm border-[#303032] text-gray-300 hover:text-white hover:bg-[#18181b] transition-colors"
-                                    onClick={() => window.open('https://github.com/LukeGus/Termix', '_blank')}
-                                >
-                                    GitHub
-                                </Button>
-                                <div className="w-px h-4 bg-[#303032]"></div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-sm border-[#303032] text-gray-300 hover:text-white hover:bg-[#18181b] transition-colors"
-                                    onClick={() => window.open('https://github.com/LukeGus/Termix/issues/new', '_blank')}
-                                >
-                                    Feedback
-                                </Button>
-                                <div className="w-px h-4 bg-[#303032]"></div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-sm border-[#303032] text-gray-300 hover:text-white hover:bg-[#18181b] transition-colors"
-                                    onClick={() => window.open('https://discord.com/invite/jVQGdvHDrf', '_blank')}
-                                >
-                                    Discord
-                                </Button>
-                                <div className="w-px h-4 bg-[#303032]"></div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-sm border-[#303032] text-gray-300 hover:text-white hover:bg-[#18181b] transition-colors"
-                                    onClick={() => window.open('https://github.com/sponsors/LukeGus', '_blank')}
-                                >
-                                    Donate
-                                </Button>
-                            </div>
+                    {/* Empty main area - content removed */}
+                    <div className="flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                            {/* Main content area is now empty */}
                         </div>
-
-                        <HomepageUpdateLog
-                            loggedIn={loggedIn}
-                        />
                     </div>
                 </div>
             )}

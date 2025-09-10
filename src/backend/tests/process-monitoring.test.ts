@@ -5,6 +5,7 @@
 
 import { parsePsAuxOutput, parseSystemInfo } from '../utils/process-parser.js';
 import { ProcessState } from '../types/process-monitoring.js';
+import { runProcessControlTests } from './process-control.test.js';
 
 // 테스트용 ps aux 출력 샘플
 const samplePsAuxOutput = `USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -215,10 +216,37 @@ function testPerformance(): boolean {
 }
 
 /**
- * 모든 테스트 실행
+ * 모든 테스트 실행 (모니터링 + 제어)
+ */
+export function runAllProcessTests(): boolean {
+  console.log('\n🧪 Starting Complete Process API Tests\n');
+  
+  // 모니터링 테스트 실행
+  const monitoringSuccess = runProcessMonitoringTests();
+  
+  console.log('\n' + '='.repeat(60) + '\n');
+  
+  // 제어 테스트 실행
+  const controlSuccess = runProcessControlTests();
+  
+  console.log('\n' + '='.repeat(60) + '\n');
+  
+  if (monitoringSuccess && controlSuccess) {
+    console.log('🎉 All process API tests passed successfully!');
+    return true;
+  } else {
+    console.log('❌ Some process API tests failed');
+    console.log(`- Monitoring tests: ${monitoringSuccess ? '✅ PASSED' : '❌ FAILED'}`);
+    console.log(`- Control tests: ${controlSuccess ? '✅ PASSED' : '❌ FAILED'}`);
+    return false;
+  }
+}
+
+/**
+ * 모니터링 테스트만 실행
  */
 export function runProcessMonitoringTests(): boolean {
-  console.log('\n🧪 Starting Process Monitoring API Tests\n');
+  console.log('🧪 Process Monitoring Tests\n');
   
   const tests = [
     testPsAuxParsing,
@@ -252,8 +280,8 @@ export function runProcessMonitoringTests(): boolean {
   }
 }
 
-// Node.js에서 직접 실행될 때 테스트 실행
+// Node.js에서 직접 실행될 때 모든 테스트 실행
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const success = runProcessMonitoringTests();
+  const success = runAllProcessTests();
   process.exit(success ? 0 : 1);
 }

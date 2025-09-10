@@ -72,11 +72,11 @@
 - [x] 프로세스 정보 타입 정의 (TypeScript 인터페이스)
 - [x] **테스트**: 기본 프로세스 API 테스트 수행
 - [x] **커밋**: `feat: implement basic process monitoring API`
-- [ ] 프로세스 종료 API 엔드포인트 구현 (`DELETE /api/monitoring/processes/:hostId/:pid`)
-- [ ] 프로세스 우선순위 변경 API 구현 (`PATCH /api/monitoring/processes/:hostId/:pid/priority`)
-- [ ] API 에러 핸들링 및 유효성 검사 구현
-- [ ] 프로세스 모니터링 API 단위 테스트 작성
-- [ ] **테스트**: 프로세스 제어 API 통합 테스트
+- [x] 프로세스 종료 API 엔드포인트 구현 (`DELETE /api/monitoring/processes/:hostId/:pid`)
+- [x] 프로세스 우선순위 변경 API 구현 (`PATCH /api/monitoring/processes/:hostId/:pid/priority`)
+- [x] API 에러 핸들링 및 유효성 검사 구현
+- [x] 프로세스 모니터링 API 단위 테스트 작성
+- [x] **테스트**: 프로세스 제어 API 통합 테스트
 - [ ] **커밋**: `feat: add process control APIs with error handling`
 
 #### 프론트엔드 UI 개발

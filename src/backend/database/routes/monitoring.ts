@@ -339,6 +339,240 @@ router.get('/processes/:hostId/:pid', async (req: Request, res: Response) => {
 });
 
 /**
+ * DELETE /api/monitoring/processes/:hostId/:pid
+ * 특정 프로세스를 종료합니다.
+ */
+router.delete('/processes/:hostId/:pid', async (req: Request, res: Response) => {
+  const { hostId, pid } = req.params;
+  const { signal = 'TERM' } = req.body; // TERM, KILL, INT 등
+
+  logInfo(`Terminating process PID ${pid} on host ${hostId} with signal ${signal}`);
+
+  try {
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createErrorResponse(
+          ProcessErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      // PID 유효성 검사
+      const pidNum = parseInt(pid, 10);
+      if (isNaN(pidNum) || pidNum <= 0) {
+        return res.status(400).json(
+          createErrorResponse(
+            ProcessErrorCode.INVALID_INPUT,
+            'Invalid process ID'
+          )
+        );
+      }
+
+      // 신호 유효성 검사
+      const validSignals = ['TERM', 'KILL', 'INT', 'HUP', 'USR1', 'USR2'];
+      if (!validSignals.includes(signal)) {
+        return res.status(400).json(
+          createErrorResponse(
+            ProcessErrorCode.INVALID_INPUT,
+            `Invalid signal. Must be one of: ${validSignals.join(', ')}`
+          )
+        );
+      }
+
+      // 프로세스 존재 여부 확인
+      const checkCommand = `ps -p ${pid} --no-headers`;
+      let processExists = true;
+      try {
+        await executeSSHCommand(conn, checkCommand, { timeout: 5000 });
+      } catch (error) {
+        processExists = false;
+      }
+
+      if (!processExists) {
+        return res.status(404).json(
+          createErrorResponse(
+            ProcessErrorCode.PROCESS_NOT_FOUND,
+            `Process with PID ${pid} not found`
+          )
+        );
+      }
+
+      // 프로세스 종료 명령 실행
+      const killCommand = `kill -${signal} ${pid}`;
+      await executeSSHCommand(conn, killCommand, { timeout: 10000 });
+
+      // 종료 확인 (KILL 신호가 아닌 경우)
+      if (signal !== 'KILL') {
+        // 3초 대기 후 프로세스 상태 확인
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        try {
+          await executeSSHCommand(conn, checkCommand, { timeout: 5000 });
+          // 프로세스가 여전히 존재하면 KILL 신호 시도
+          logInfo(`Process ${pid} still running after ${signal}, sending KILL signal`);
+          await executeSSHCommand(conn, `kill -KILL ${pid}`, { timeout: 5000 });
+        } catch (error) {
+          // 프로세스가 종료되었음 (정상)
+        }
+      }
+
+      logInfo(`Successfully terminated process PID ${pid}`);
+      res.json({
+        success: true,
+        message: `Process ${pid} terminated successfully`,
+        signal: signal,
+        timestamp: new Date().toISOString()
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error terminating process PID ${pid}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createErrorResponse(
+          ProcessErrorCode.COMMAND_EXECUTION_FAILED,
+          `Failed to terminate process: ${error.message}`,
+          { command: error.command, exitCode: error.exitCode }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createErrorResponse(
+          ProcessErrorCode.SYSTEM_ERROR,
+          'Internal server error while terminating process'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * PATCH /api/monitoring/processes/:hostId/:pid/priority
+ * 프로세스의 우선순위(nice 값)를 변경합니다.
+ */
+router.patch('/processes/:hostId/:pid/priority', async (req: Request, res: Response) => {
+  const { hostId, pid } = req.params;
+  const { priority } = req.body;
+
+  logInfo(`Changing priority for process PID ${pid} on host ${hostId} to ${priority}`);
+
+  try {
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createErrorResponse(
+          ProcessErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      // PID 유효성 검사
+      const pidNum = parseInt(pid, 10);
+      if (isNaN(pidNum) || pidNum <= 0) {
+        return res.status(400).json(
+          createErrorResponse(
+            ProcessErrorCode.INVALID_INPUT,
+            'Invalid process ID'
+          )
+        );
+      }
+
+      // 우선순위 유효성 검사 (nice 값: -20 ~ 19)
+      const priorityNum = parseInt(priority, 10);
+      if (isNaN(priorityNum) || priorityNum < -20 || priorityNum > 19) {
+        return res.status(400).json(
+          createErrorResponse(
+            ProcessErrorCode.INVALID_INPUT,
+            'Priority must be a number between -20 (highest) and 19 (lowest)'
+          )
+        );
+      }
+
+      // 프로세스 존재 여부 확인
+      const checkCommand = `ps -p ${pid} --no-headers`;
+      try {
+        await executeSSHCommand(conn, checkCommand, { timeout: 5000 });
+      } catch (error) {
+        return res.status(404).json(
+          createErrorResponse(
+            ProcessErrorCode.PROCESS_NOT_FOUND,
+            `Process with PID ${pid} not found`
+          )
+        );
+      }
+
+      // 우선순위 변경 명령 실행
+      const reniceCommand = `renice ${priority} -p ${pid}`;
+      const result = await executeSSHCommand(conn, reniceCommand, { timeout: 10000 });
+
+      // 변경 후 프로세스 정보 조회
+      const processInfoCommand = `ps -p ${pid} -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,nice,comm,args --no-headers`;
+      const processInfo = await executeSSHCommand(conn, processInfoCommand, { timeout: 5000 });
+
+      const processes = parseExtendedPsOutput(`HEADER\n${processInfo.stdout}`);
+      const process = processes[0];
+
+      logInfo(`Successfully changed priority for process PID ${pid} to ${priority}`);
+      res.json({
+        success: true,
+        message: `Process ${pid} priority changed to ${priority}`,
+        oldPriority: process?.priority || 0,
+        newPriority: priority,
+        process: process,
+        timestamp: new Date().toISOString()
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error changing priority for process PID ${pid}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      // 권한 오류 처리
+      if (error.stderr?.includes('permission denied') || error.stderr?.includes('Operation not permitted')) {
+        res.status(403).json(
+          createErrorResponse(
+            ProcessErrorCode.PERMISSION_DENIED,
+            'Insufficient permissions to change process priority. Root or process owner access required.',
+            { command: error.command, stderr: error.stderr }
+          )
+        );
+      } else {
+        res.status(500).json(
+          createErrorResponse(
+            ProcessErrorCode.COMMAND_EXECUTION_FAILED,
+            `Failed to change process priority: ${error.message}`,
+            { command: error.command, exitCode: error.exitCode }
+          )
+        );
+      }
+    } else {
+      res.status(500).json(
+        createErrorResponse(
+          ProcessErrorCode.SYSTEM_ERROR,
+          'Internal server error while changing process priority'
+        )
+      );
+    }
+  }
+});
+
+/**
  * GET /api/monitoring/system/:hostId
  * 시스템 정보를 조회합니다.
  */

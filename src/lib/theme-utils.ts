@@ -23,8 +23,8 @@ export interface ThemeSettings {
 
 // 기본 테마 설정
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-  mode: 'system',
-  systemTheme: 'light',
+  mode: 'dark',
+  systemTheme: 'dark',
   customColors: {},
   terminalTheme: 'default',
   editorTheme: 'default',

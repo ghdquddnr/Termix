@@ -1,10 +1,61 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-transition">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Termix</title>
+    <!-- Theme flash prevention script -->
+    <script>
+(function() {
+  try {
+    // 쿠키에서 테마 설정 읽기
+    const cookies = document.cookie.split(';');
+    let themeSettings = null;
+    
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'termix-theme-settings') {
+        try {
+          themeSettings = JSON.parse(decodeURIComponent(value));
+          break;
+        } catch (e) {
+          // 파싱 에러 무시
+        }
+      }
+    }
+    
+    if (themeSettings) {
+      const { mode, systemTheme } = themeSettings;
+      let resolvedTheme = mode;
+      
+      if (mode === 'system') {
+        resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      
+      // 즉시 테마 클래스 적용
+      const html = document.documentElement;
+      html.classList.remove('light', 'dark');
+      html.classList.add(resolvedTheme);
+      
+      // 커스텀 컬러 적용
+      if (themeSettings.customColors) {
+        const { primary, secondary, accent } = themeSettings.customColors;
+        if (primary) html.style.setProperty('--color-primary', primary);
+        if (secondary) html.style.setProperty('--color-secondary', secondary);
+        if (accent) html.style.setProperty('--color-accent', accent);
+      }
+    } else {
+      // 기본값은 다크 모드
+      document.documentElement.classList.add('dark');
+    }
+  } catch (error) {
+    console.warn('Theme flash prevention failed:', error);
+    // 오류 시 기본 다크 모드 적용
+    document.documentElement.classList.add('dark');
+  }
+})();
+    </script>
   </head>
   <body>
     <div id="root"></div>

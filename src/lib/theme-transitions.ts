@@ -2,7 +2,104 @@
  * Theme Transition Utilities
  * 
  * 테마 전환시 부드러운 애니메이션과 시각적 효과를 제공합니다.
+ * CSS 변수 캐싱과 최적화된 성능을 제공합니다.
  */
+
+import { 
+  ESSENTIAL_THEME_VARIABLES, 
+  EXTENDED_THEME_VARIABLES, 
+  COMPONENT_THEME_VARIABLES,
+  PERFORMANCE_CONFIG,
+  THEME_TRANSITION_CONFIG,
+  type ThemeVariable 
+} from './theme-config';
+
+// 성능 최적화된 CSS 변수 캐시
+const cssVariableCache = new Map<string, { value: string; timestamp: number }>();
+
+/**
+ * CSS 변수 값을 캐시에서 가져오거나 계산합니다. (성능 최적화 버전)
+ */
+function getCachedCSSVariable(property: string): string {
+  const cached = cssVariableCache.get(property);
+  const now = Date.now();
+  
+  // 캐시가 유효한지 확인
+  if (cached && (now - cached.timestamp) < PERFORMANCE_CONFIG.cacheExpiry) {
+    return cached.value;
+  }
+  
+  const value = getComputedStyle(document.documentElement).getPropertyValue(property).trim();
+  cssVariableCache.set(property, { value, timestamp: now });
+  return value;
+}
+
+/**
+ * 만료된 캐시 항목만 정리합니다.
+ */
+function clearExpiredCache(): void {
+  const now = Date.now();
+  const expired: string[] = [];
+  
+  cssVariableCache.forEach(({ timestamp }, key) => {
+    if ((now - timestamp) >= PERFORMANCE_CONFIG.cacheExpiry) {
+      expired.push(key);
+    }
+  });
+  
+  expired.forEach(key => cssVariableCache.delete(key));
+}
+
+/**
+ * 테마 변경 시 캐시를 완전히 초기화합니다.
+ */
+function clearCSSVariableCache(): void {
+  cssVariableCache.clear();
+}
+
+/**
+ * 핵심 테마 변수만 미리 로드합니다. (번들 크기 최적화)
+ */
+function preloadEssentialVariables(): void {
+  requestIdleCallback(() => {
+    ESSENTIAL_THEME_VARIABLES.slice(0, PERFORMANCE_CONFIG.preloadLimit)
+      .forEach(key => getCachedCSSVariable(key));
+  }, { timeout: 1000 });
+}
+
+/**
+ * 필요시에만 확장 변수를 로드합니다.
+ */
+function preloadExtendedVariables(): void {
+  requestIdleCallback(() => {
+    EXTENDED_THEME_VARIABLES.forEach(key => getCachedCSSVariable(key));
+  }, { timeout: 2000 });
+}
+
+/**
+ * 컴포넌트별 변수를 필요시에만 로드합니다.
+ */
+function preloadComponentVariables(): void {
+  requestIdleCallback(() => {
+    COMPONENT_THEME_VARIABLES.forEach(key => getCachedCSSVariable(key));
+  }, { timeout: 3000 });
+}
+
+/**
+ * CSS 변수 일괄 업데이트 (성능 최적화된 버전)
+ */
+function batchUpdateCSSVariables(updates: Record<string, string>): void {
+  const root = document.documentElement;
+  const now = Date.now();
+  
+  // requestAnimationFrame으로 업데이트를 일괄 처리
+  requestAnimationFrame(() => {
+    Object.entries(updates).forEach(([property, value]) => {
+      root.style.setProperty(property, value);
+      cssVariableCache.set(property, { value, timestamp: now });
+    });
+  });
+}
 
 export interface ThemeTransitionOptions {
   duration?: number;
@@ -11,8 +108,8 @@ export interface ThemeTransitionOptions {
 }
 
 const DEFAULT_TRANSITION_OPTIONS: Required<ThemeTransitionOptions> = {
-  duration: 300,
-  easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  duration: THEME_TRANSITION_CONFIG.duration,
+  easing: THEME_TRANSITION_CONFIG.easing,
   disableTransition: false,
 };
 
@@ -31,14 +128,19 @@ export function applyThemeTransition(options: ThemeTransitionOptions = {}): void
   // 기존 transition 클래스 제거
   root.classList.remove('no-transition');
   
-  // CSS 변수 업데이트
-  root.style.setProperty('--theme-transition-duration', `${opts.duration}ms`);
-  root.style.setProperty('--theme-transition-timing', opts.easing);
+  // CSS 변수 일괄 업데이트 (성능 최적화)
+  batchUpdateCSSVariables({
+    '--theme-transition-duration': `${opts.duration}ms`,
+    '--theme-transition-timing': opts.easing
+  });
   
   // 페이지 로드 시 transition 방지를 위한 클래스 제거
   requestAnimationFrame(() => {
     root.classList.remove('no-transition');
   });
+  
+  // 핵심 테마 변수만 미리 로드 (번들 크기 최적화)
+  preloadEssentialVariables();
 }
 
 /**
@@ -194,36 +296,53 @@ export function shouldUseReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+// 메타 태그 요소 캐시
+const metaTagCache = new Map<string, HTMLMetaElement>();
+
 /**
- * 테마별 메타 태그를 업데이트합니다.
+ * 메타 태그를 캐시에서 가져오거나 생성합니다.
+ */
+function getCachedMetaTag(name: string): HTMLMetaElement {
+  if (metaTagCache.has(name)) {
+    return metaTagCache.get(name)!;
+  }
+  
+  let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = name;
+    document.head.appendChild(meta);
+  }
+  
+  metaTagCache.set(name, meta);
+  return meta;
+}
+
+/**
+ * 테마별 메타 태그를 업데이트합니다. (최적화된 버전)
  */
 export function updateThemeMetaTags(theme: 'light' | 'dark'): void {
-  // theme-color 메타 태그 업데이트
-  let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement;
-  if (!themeColorMeta) {
-    themeColorMeta = document.createElement('meta');
-    themeColorMeta.name = 'theme-color';
-    document.head.appendChild(themeColorMeta);
-  }
-  
   const themeColor = theme === 'dark' ? '#121212' : '#ffffff';
-  themeColorMeta.content = themeColor;
+  const statusBarStyle = theme === 'dark' ? 'black-translucent' : 'default';
   
-  // msapplication-navbutton-color 메타 태그 업데이트
-  let navButtonMeta = document.querySelector('meta[name="msapplication-navbutton-color"]') as HTMLMetaElement;
-  if (!navButtonMeta) {
-    navButtonMeta = document.createElement('meta');
-    navButtonMeta.name = 'msapplication-navbutton-color';
-    document.head.appendChild(navButtonMeta);
-  }
-  navButtonMeta.content = themeColor;
-  
-  // apple-mobile-web-app-status-bar-style 메타 태그 업데이트
-  let statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]') as HTMLMetaElement;
-  if (!statusBarMeta) {
-    statusBarMeta = document.createElement('meta');
-    statusBarMeta.name = 'apple-mobile-web-app-status-bar-style';
-    document.head.appendChild(statusBarMeta);
-  }
-  statusBarMeta.content = theme === 'dark' ? 'black-translucent' : 'default';
+  // 메타 태그 일괄 업데이트
+  requestAnimationFrame(() => {
+    getCachedMetaTag('theme-color').content = themeColor;
+    getCachedMetaTag('msapplication-navbutton-color').content = themeColor;
+    getCachedMetaTag('apple-mobile-web-app-status-bar-style').content = statusBarStyle;
+  });
 }
+
+// 익스포트할 최적화된 함수들
+export {
+  getCachedCSSVariable,
+  clearCSSVariableCache,
+  clearExpiredCache,
+  preloadEssentialVariables,
+  preloadExtendedVariables,
+  preloadComponentVariables,
+  batchUpdateCSSVariables
+};
+
+// 레거시 호환성을 위한 별칭
+export const preloadThemeVariables = preloadEssentialVariables;

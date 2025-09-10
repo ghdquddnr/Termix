@@ -127,12 +127,15 @@
   --editor-selection: rgba(0, 212, 170, 0.3);
 }
 
-/* Smooth Transitions for Theme Changes */
-* {
+/* Optimized Transitions for Theme Changes */
+*,
+*::before,
+*::after {
   transition: 
     background-color var(--theme-transition-duration) var(--theme-transition-timing),
     color var(--theme-transition-duration) var(--theme-transition-timing),
-    border-color var(--theme-transition-duration) var(--theme-transition-timing);
+    border-color var(--theme-transition-duration) var(--theme-transition-timing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-timing);
 }
 
 /* Prevent transitions on page load */
@@ -140,62 +143,32 @@
   transition: none !important;
 }
 
-/* Terminal component styling */
-.terminal {
+/* Core Component Styling (더 구체적인 셀렉터로 성능 최적화) */
+.xterm-viewport,
+.xterm-screen {
   background-color: var(--terminal-background);
   color: var(--terminal-foreground);
-  border: 1px solid var(--color-border);
 }
 
-.terminal-cursor {
+.xterm-cursor-layer .xterm-cursor {
   background-color: var(--terminal-cursor);
 }
 
-.terminal-selection {
+.xterm-selection-layer {
   background-color: var(--terminal-selection);
 }
 
-/* Editor component styling */
-.editor {
+.cm-editor {
   background-color: var(--editor-background);
   color: var(--editor-foreground);
-  border: 1px solid var(--color-border);
 }
 
-.editor-line-number {
+.cm-lineNumbers {
   color: var(--editor-line-number);
 }
 
-.editor-selection {
+.cm-selectionLayer .cm-selectionBackground {
   background-color: var(--editor-selection);
-}
-
-/* Theme-aware components */
-.theme-card {
-  background-color: var(--color-card);
-  color: var(--color-foreground);
-  border: 1px solid var(--color-border);
-}
-
-.theme-button {
-  background-color: var(--color-primary);
-  color: var(--color-primary-foreground);
-  border: 1px solid var(--color-primary);
-}
-
-.theme-button:hover {
-  opacity: 0.9;
-}
-
-.theme-input {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  border: 1px solid var(--color-input);
-}
-
-.theme-input:focus {
-  border-color: var(--color-ring);
-  box-shadow: 0 0 0 2px rgba(var(--color-ring), 0.2);
 }
 
 /* High contrast mode support */

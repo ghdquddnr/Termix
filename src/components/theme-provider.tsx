@@ -1,6 +1,21 @@
 import {createContext, useContext, useEffect, useState, useCallback} from "react"
 import {getThemeFromCookie, saveThemeToCookie, type ThemeSettings, type ThemeMode} from "@/lib/theme-utils"
-import {applyThemeTransition, updateThemeMetaTags, shouldUseReducedMotion} from "@/lib/theme-transitions"
+import {
+    applyThemeTransition, 
+    updateThemeMetaTags, 
+    shouldUseReducedMotion,
+    batchUpdateCSSVariables,
+    clearCSSVariableCache,
+    preloadEssentialVariables,
+    preloadExtendedVariables
+} from "@/lib/theme-transitions"
+
+// 개발 환경에서만 성능 모니터링 로드
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  import('@/lib/theme-benchmark').catch(() => {
+    // 벤치마크 로드 실패 시 무시 (선택적 기능)
+  });
+}
 
 type ThemeProviderProps = {
     children: React.ReactNode
@@ -80,10 +95,18 @@ export function ThemeProvider({
     useEffect(() => {
         const root = window.document.documentElement
         
-        // 테마 전환 애니메이션 적용 (접근성 고려)
-        applyThemeTransition({
-            disableTransition: shouldUseReducedMotion()
+        // 페이지 로드 시 깜빡임 방지를 위해 no-transition 클래스 제거
+        requestAnimationFrame(() => {
+            root.classList.remove("no-transition")
         })
+        
+        // 테마 전환 애니메이션 적용 (접근성 고려)
+        const shouldDisableTransition = shouldUseReducedMotion()
+        if (!shouldDisableTransition) {
+            applyThemeTransition({
+                disableTransition: false
+            })
+        }
         
         // 기존 테마 클래스 제거
         root.classList.remove("light", "dark")
@@ -91,12 +114,22 @@ export function ThemeProvider({
         // 새 테마 클래스 추가
         root.classList.add(resolvedTheme)
 
-        // CSS 커스텀 속성으로 커스텀 컬러 적용
+        // CSS 변수 캐시 초기화 (테마 변경 시)
+        clearCSSVariableCache()
+        
+        // CSS 커스텀 속성으로 커스텀 컬러 적용 (최적화된 버전)
         if (themeSettings.customColors) {
             const { primary, secondary, accent } = themeSettings.customColors
-            if (primary) root.style.setProperty('--color-primary', primary)
-            if (secondary) root.style.setProperty('--color-secondary', secondary)
-            if (accent) root.style.setProperty('--color-accent', accent)
+            const updates: Record<string, string> = {}
+            
+            if (primary) updates['--color-primary'] = primary
+            if (secondary) updates['--color-secondary'] = secondary
+            if (accent) updates['--color-accent'] = accent
+            
+            // 일괄 업데이트
+            if (Object.keys(updates).length > 0) {
+                batchUpdateCSSVariables(updates)
+            }
         }
 
         // 메타 태그 업데이트 (모바일 브라우저 테마 색상)
@@ -105,6 +138,11 @@ export function ThemeProvider({
         // 백워드 호환성을 위한 localStorage 업데이트
         if (storageKey) {
             localStorage.setItem(storageKey, themeSettings.mode)
+        }
+        
+        // 확장 변수를 필요시에만 로드 (번들 크기 최적화)
+        if (themeSettings.customColors || resolvedTheme !== 'system') {
+            preloadExtendedVariables()
         }
     }, [resolvedTheme, themeSettings.customColors, storageKey])
 

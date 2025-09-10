@@ -9,6 +9,8 @@ import { AdminSettings } from "@/ui/Admin/AdminSettings";
 import { UserProfile } from "@/ui/User/UserProfile.tsx";
 import { Toaster } from "@/components/ui/sonner";
 import { getUserInfo } from "@/ui/main-axios.ts";
+import { ThemeSettings } from "@/components/theme/ThemeSettings";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function getCookie(name: string) {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -88,6 +90,7 @@ function AppContent() {
     const showSshManager = currentTabData?.type === 'ssh_manager';
     const showAdmin = currentTabData?.type === 'admin';
     const showProfile = currentTabData?.type === 'profile';
+    const showThemeSettings = currentTabData?.type === 'theme_settings';
 
     return (
         <div>
@@ -203,6 +206,24 @@ function AppContent() {
                         <UserProfile isTopbarOpen={isTopbarOpen} />
                     </div>
 
+                    <div
+                        className="h-screen w-full"
+                        style={{
+                            visibility: showThemeSettings ? "visible" : "hidden",
+                            pointerEvents: showThemeSettings ? "auto" : "none",
+                            height: showThemeSettings ? "100vh" : 0,
+                            width: showThemeSettings ? "100%" : 0,
+                            position: showThemeSettings ? "static" : "absolute",
+                            overflow: "auto",
+                        }}
+                    >
+                        <div className="p-6 max-w-4xl mx-auto" style={{
+                            paddingTop: isTopbarOpen ? '70px' : '20px',
+                        }}>
+                            <ThemeSettings />
+                        </div>
+                    </div>
+
                     <TopNavbar isTopbarOpen={isTopbarOpen} setIsTopbarOpen={setIsTopbarOpen}/>
                 </LeftSidebar>
             )}
@@ -219,9 +240,11 @@ function AppContent() {
 
 function App() {
     return (
-        <TabProvider>
-            <AppContent />
-        </TabProvider>
+        <ThemeProvider defaultTheme="dark">
+            <TabProvider>
+                <AppContent />
+            </TabProvider>
+        </ThemeProvider>
     );
 }
 

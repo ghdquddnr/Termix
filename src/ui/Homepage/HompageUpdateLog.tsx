@@ -113,7 +113,7 @@ export function HomepageUpdateLog({loggedIn}: HomepageUpdateLogProps) {
             <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                 {loading && (
                     <div className="flex items-center justify-center h-32">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
                 )}
 

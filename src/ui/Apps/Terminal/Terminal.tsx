@@ -5,6 +5,8 @@ import {ClipboardAddon} from '@xterm/addon-clipboard';
 import {Unicode11Addon} from '@xterm/addon-unicode11';
 import {WebLinksAddon} from '@xterm/addon-web-links';
 import {useTranslation} from 'react-i18next';
+import {useTheme} from '@/components/theme-provider';
+import {getTerminalTheme, convertToXTermTheme} from '@/lib/terminal-themes';
 
 interface SSHTerminalProps {
     hostConfig: any;
@@ -19,6 +21,7 @@ export const Terminal = forwardRef<any, SSHTerminalProps>(function SSHTerminal(
     ref
 ) {
     const {t} = useTranslation();
+    const {resolvedTheme} = useTheme();
     const {instance: terminal, ref: xtermRef} = useXTerm();
     const fitAddonRef = useRef<FitAddon | null>(null);
     const webSocketRef = useRef<WebSocket | null>(null);
@@ -197,13 +200,15 @@ export const Terminal = forwardRef<any, SSHTerminalProps>(function SSHTerminal(
     useEffect(() => {
         if (!terminal || !xtermRef.current || !hostConfig) return;
 
+        const terminalTheme = getTerminalTheme(resolvedTheme);
+        
         terminal.options = {
             cursorBlink: true,
             cursorStyle: 'bar',
             scrollback: 10000,
             fontSize: 14,
             fontFamily: '"JetBrains Mono Nerd Font", "MesloLGS NF", "FiraCode Nerd Font", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace',
-            theme: {background: '#18181b', foreground: '#f7f7f7'},
+            theme: convertToXTermTheme(terminalTheme),
             allowTransparency: true,
             convertEol: true,
             windowsMode: false,
@@ -303,7 +308,7 @@ export const Terminal = forwardRef<any, SSHTerminalProps>(function SSHTerminal(
             }
             webSocketRef.current?.close();
         };
-    }, [xtermRef, terminal, hostConfig]);
+    }, [xtermRef, terminal, hostConfig, resolvedTheme]);
 
     useEffect(() => {
         if (isVisible && fitAddonRef.current) {

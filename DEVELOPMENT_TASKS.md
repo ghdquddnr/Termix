@@ -33,24 +33,24 @@
 - [x] **커밋**: `feat: implement theme system with cookie storage`
 
 #### 테마 설정 UI
-- [ ] 테마 설정 페이지 컴포넌트 (`ThemeSettings.tsx`)
-- [ ] 테마 선택 드롭다운/토글 컴포넌트
-- [ ] 실시간 테마 미리보기 기능
-- [ ] 커스텀 색상 팔레트 편집기 (고급 기능 - 쿠키에 JSON 저장)
-- [ ] 테마별 아이콘 및 색상 시스템 적용
-- [ ] TopNavbar에 테마 전환 버튼 추가
-- [ ] 테마 변경 시 즉시 쿠키 업데이트 구현
-- [ ] **테스트**: 테마 UI 컴포넌트 및 쿠키 연동 테스트
-- [ ] **커밋**: `feat: add theme settings UI with cookie integration`
+- [x] 테마 설정 페이지 컴포넌트 (`ThemeSettings.tsx`)
+- [x] 테마 선택 드롭다운/토글 컴포넌트
+- [x] 실시간 테마 미리보기 기능
+- [x] 커스텀 색상 팔레트 편집기 (고급 기능 - 쿠키에 JSON 저장)
+- [x] 테마별 아이콘 및 색상 시스템 적용
+- [x] TopNavbar에 테마 전환 버튼 추가
+- [x] 테마 변경 시 즉시 쿠키 업데이트 구현
+- [x] **테스트**: 테마 UI 컴포넌트 및 쿠키 연동 테스트
+- [x] **커밋**: `feat: add theme settings UI with cookie integration`
 
 #### 테마 적용 범위
-- [ ] 모든 기존 컴포넌트에 테마 변수 적용
-- [ ] 터미널 테마 연동 (xterm.js 테마)
-- [ ] 코드 에디터 테마 연동 (CodeMirror 테마)
-- [ ] 차트 및 시각화 컴포넌트 테마 적용
-- [ ] 로딩 스피너 및 아이콘 테마 적용
-- [ ] **테스트**: 전체 애플리케이션 테마 적용 확인
-- [ ] **커밋**: `feat: apply theme system to all components`
+- [x] 모든 기존 컴포넌트에 테마 변수 적용
+- [x] 터미널 테마 연동 (xterm.js 테마)
+- [x] 코드 에디터 테마 연동 (CodeMirror 테마)
+- [x] 차트 및 시각화 컴포넌트 테마 적용
+- [x] 로딩 스피너 및 아이콘 테마 적용
+- [x] **테스트**: 전체 애플리케이션 테마 적용 확인
+- [x] **커밋**: `feat: apply theme system to all components`
 
 #### 성능 최적화
 - [ ] 테마 변경 시 깜빡임 방지 최적화

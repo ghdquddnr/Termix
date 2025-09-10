@@ -229,7 +229,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
     return (
         <div>
             <div
-                className="fixed z-10 h-[50px] bg-[#18181b] border-2 border-[#303032] rounded-lg transition-all duration-200 ease-linear flex flex-row"
+                className="fixed z-10 h-[50px] bg-sidebar border-2 border-sidebar-border rounded-lg transition-all duration-200 ease-linear flex flex-row"
                 style={{
                     top: isTopbarOpen ? "0.5rem" : "-3rem",
                     left: leftPosition,
@@ -241,7 +241,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                 }}
             >
                 <div
-                    className="h-full p-1 pr-2 border-r-2 border-[#303032] w-[calc(100%-6rem)] flex items-center overflow-x-auto overflow-y-hidden gap-2 thin-scrollbar">
+                    className="h-full p-1 pr-2 border-r-2 border-sidebar-border w-[calc(100%-6rem)] flex items-center overflow-x-auto overflow-y-hidden gap-2 thin-scrollbar">
                     {tabs.map((tab: any) => {
                         const isActive = tab.id === currentTab;
                         const isSplit = Array.isArray(allSplitScreenTab) && allSplitScreenTab.includes(tab.id);
@@ -313,7 +313,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
             {!isTopbarOpen && (
                 <div
                     onClick={() => setIsTopbarOpen(true)}
-                    className="absolute top-0 left-0 w-full h-[10px] bg-[#18181b] cursor-pointer z-20 flex items-center justify-center rounded-bl-md rounded-br-md">
+                    className="absolute top-0 left-0 w-full h-[10px] bg-sidebar cursor-pointer z-20 flex items-center justify-center rounded-bl-md rounded-br-md">
                     <ChevronDown size={10}/>
                 </div>
             )}
@@ -340,9 +340,9 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                     />
 
                     <div
-                        className="w-[400px] h-full bg-[#18181b] border-l-2 border-[#303032] flex flex-col shadow-2xl"
+                        className="w-[400px] h-full bg-sidebar border-l-2 border-sidebar-border flex flex-col shadow-2xl"
                         style={{
-                            backgroundColor: '#18181b',
+                            backgroundColor: 'hsl(var(--sidebar))',
                             boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.5)',
                             zIndex: 999999,
                             position: 'relative',
@@ -351,13 +351,13 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-[#303032]">
-                            <h2 className="text-lg font-semibold text-white">{t('sshTools.title')}</h2>
+                        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+                            <h2 className="text-lg font-semibold text-foreground">{t('sshTools.title')}</h2>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setToolsSheetOpen(false)}
-                                className="h-8 w-8 p-0 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center"
+                                className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground transition-colors flex items-center justify-center"
                                 title={t('sshTools.closeTools')}
                             >
                                 <span className="text-lg font-bold leading-none">×</span>
@@ -395,7 +395,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                         {isRecording && (
                                             <>
                                                 <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-white">{t('sshTools.selectTerminals')}</label>
+                                                    <label className="text-sm font-medium text-foreground">{t('sshTools.selectTerminals')}</label>
                                                     <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto mt-2">
                                                         {terminalTabs.map(tab => (
                                                             <Button
@@ -405,7 +405,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                                                 size="sm"
                                                                 className={`rounded-full px-3 py-1 text-xs flex items-center gap-1 ${
                                                                     selectedTabIds.includes(tab.id)
-                                                                        ? 'text-white bg-gray-700'
+                                                                        ? 'text-primary-foreground bg-primary'
                                                                         : 'text-gray-500'
                                                                 }`}
                                                                 onClick={() => handleTabToggle(tab.id)}
@@ -417,7 +417,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <label className="text-sm font-medium text-white">{t('sshTools.typeCommands')}</label>
+                                                    <label className="text-sm font-medium text-foreground">{t('sshTools.typeCommands')}</label>
                                                     <Input
                                                         id="ssh-tools-input"
                                                         placeholder={t('placeholders.typeHere')}
@@ -450,7 +450,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                     />
                                     <label
                                         htmlFor="enable-copy-paste"
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white"
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
                                     >
                                         {t('sshTools.enableRightClickCopyPaste')}
                                     </label>

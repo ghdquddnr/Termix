@@ -4,6 +4,8 @@ import {loadLanguage} from '@uiw/codemirror-extensions-langs';
 import {hyperLink} from '@uiw/codemirror-extensions-hyper-link';
 import {oneDark} from '@codemirror/theme-one-dark';
 import {EditorView} from '@codemirror/view';
+import {useTheme} from '@/components/theme-provider';
+import {getCodeMirrorTheme} from '@/lib/codemirror-themes';
 
 interface FileManagerCodeEditorProps {
     content: string;
@@ -12,6 +14,7 @@ interface FileManagerCodeEditorProps {
 }
 
 export function FileManagerFileEditor({content, fileName, onContentChange}: FileManagerCodeEditorProps) {
+    const {resolvedTheme} = useTheme();
     function getLanguageName(filename: string): string {
         if (!filename || typeof filename !== 'string') {
             return 'text';
@@ -328,15 +331,8 @@ export function FileManagerFileEditor({content, fileName, onContentChange}: File
                     extensions={[
                         loadLanguage(getLanguageName(fileName || 'untitled.txt') as any) || [],
                         hyperLink,
-                        oneDark,
-                        EditorView.theme({
-                            '&': {
-                                backgroundColor: '#09090b !important',
-                            },
-                            '.cm-gutters': {
-                                backgroundColor: '#18181b !important',
-                            },
-                        })
+                        ...(resolvedTheme === 'dark' ? [oneDark] : []),
+                        getCodeMirrorTheme(resolvedTheme)
                     ]}
                     onChange={(value: any) => onContentChange(value)}
                     theme={undefined}

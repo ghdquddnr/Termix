@@ -43,9 +43,9 @@ export function FolderCard({folderName, hosts, isFirst, isLast}: FolderCardProps
     };
 
     return (
-        <div className="bg-[#0e0e10] border-2 border-[#303032] rounded-lg overflow-hidden"
+        <div className="bg-sidebar-accent border-2 border-sidebar-border rounded-lg overflow-hidden"
              style={{padding: '0', margin: '0'}}>
-            <div className={`px-4 py-3 relative ${isExpanded ? 'border-b-2' : ''} bg-[#131316]`}>
+            <div className={`px-4 py-3 relative ${isExpanded ? 'border-b-2 border-sidebar-border' : ''} bg-sidebar`}>
                 <div className="flex gap-2 pr-10">
                     <div className="flex-shrink-0 flex items-center">
                         <Folder size={16} strokeWidth={3}/>

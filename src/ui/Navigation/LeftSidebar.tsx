@@ -279,7 +279,7 @@ export function LeftSidebar({
             <SidebarProvider open={isSidebarOpen}>
                 <Sidebar variant="floating" className="">
                     <SidebarHeader>
-                        <SidebarGroupLabel className="text-lg font-bold text-white">
+                        <SidebarGroupLabel className="text-lg font-bold text-sidebar-foreground">
                             Termix
                             <Button
                                 variant="outline"
@@ -294,7 +294,7 @@ export function LeftSidebar({
                     <Separator className="p-0.25"/>
                     <SidebarContent>
                         <SidebarGroup className="!m-0 !p-0 !-mb-2">
-                            <Button className="m-2 flex flex-row font-semibold border-2 !border-[#303032]" variant="outline"
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
                                     onClick={openSshManagerTab} disabled={!!sshManagerTab || isSplitScreenActive}
                                     title={sshManagerTab ? t('interface.sshManagerAlreadyOpen') : isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <HardDrive strokeWidth="2.5"/>
@@ -303,12 +303,12 @@ export function LeftSidebar({
                         </SidebarGroup>
                         <Separator className="p-0.25"/>
                         <SidebarGroup className="flex flex-col gap-y-2 !-mt-2">
-                            <div className="!bg-[#222225] rounded-lg">
+                            <div className="bg-sidebar-accent rounded-lg">
                                 <Input
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     placeholder={t('placeholders.searchHostsAny')}
-                                    className="w-full h-8 text-sm border-2 !bg-[#222225] border-[#303032] rounded-md"
+                                    className="w-full h-8 text-sm border-2 bg-sidebar-accent border-sidebar-border rounded-md text-sidebar-accent-foreground placeholder:text-sidebar-accent-foreground/60"
                                     autoComplete="off"
                                 />
                             </div>
@@ -414,7 +414,7 @@ export function LeftSidebar({
             {!isSidebarOpen && (
                 <div
                     onClick={() => setIsSidebarOpen(true)}
-                    className="absolute top-0 left-0 w-[10px] h-full bg-[#18181b] cursor-pointer z-20 flex items-center justify-center rounded-tr-md rounded-br-md">
+                    className="absolute top-0 left-0 w-[10px] h-full bg-sidebar cursor-pointer z-20 flex items-center justify-center rounded-tr-md rounded-br-md text-sidebar-foreground">
                     <ChevronRight size={10}/>
                 </div>
             )}
@@ -436,9 +436,9 @@ export function LeftSidebar({
                     }}
                 >
                     <div
-                        className="w-[400px] h-full bg-[#18181b] border-r-2 border-[#303032] flex flex-col shadow-2xl"
+                        className="w-[400px] h-full bg-sidebar border-r-2 border-sidebar-border flex flex-col shadow-2xl"
                         style={{
-                            backgroundColor: '#18181b',
+                            backgroundColor: 'hsl(var(--sidebar))',
                             boxShadow: '4px 0 20px rgba(0, 0, 0, 0.5)',
                             zIndex: 9999999,
                             position: 'relative',
@@ -447,8 +447,8 @@ export function LeftSidebar({
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-[#303032]">
-                            <h2 className="text-lg font-semibold text-white">{t('leftSidebar.deleteAccount')}</h2>
+                        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+                            <h2 className="text-lg font-semibold text-sidebar-foreground">{t('leftSidebar.deleteAccount')}</h2>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -466,7 +466,7 @@ export function LeftSidebar({
 
                         <div className="flex-1 overflow-y-auto p-4">
                             <div className="space-y-4">
-                                <div className="text-sm text-gray-300">
+                                <div className="text-sm text-sidebar-foreground/80">
                                     {t('leftSidebar.deleteAccountWarning')}
                                 </div>
 

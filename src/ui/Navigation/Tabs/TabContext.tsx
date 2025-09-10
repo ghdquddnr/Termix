@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 
 export interface Tab {
     id: number;
-    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager';
+    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager' | 'theme_settings';
     title: string;
     hostConfig?: any;
     terminalRef?: React.RefObject<any>;

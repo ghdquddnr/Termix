@@ -135,7 +135,7 @@
 
 .thin-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #303032 transparent;
+    scrollbar-color: hsl(var(--muted)) hsl(var(--background));
 }
 
 .thin-scrollbar::-webkit-scrollbar {
@@ -144,35 +144,16 @@
 }
 
 .thin-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(var(--background));
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #303032;
-    border-radius: 9999px;
-    border: 2px solid transparent;
+    background-color: hsl(var(--muted));
+    border-radius: 3px;
+    border: 1px solid hsl(var(--background));
     background-clip: content-box;
 }
 
-.thin-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: #18181b;
-}
-
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #434345;
-  border-radius: 3px;
-}
-
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #5a5a5d;
-}
-
-.thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #434345 #18181b;
+    background-color: hsl(var(--muted-foreground));
 }

@@ -77,7 +77,7 @@
 - [x] API 에러 핸들링 및 유효성 검사 구현
 - [x] 프로세스 모니터링 API 단위 테스트 작성
 - [x] **테스트**: 프로세스 제어 API 통합 테스트
-- [ ] **커밋**: `feat: add process control APIs with error handling`
+- [x] **커밋**: `feat: add process control APIs with error handling`
 
 #### 프론트엔드 UI 개발
 - [ ] 프로세스 모니터링 페이지 컴포넌트 생성 (`ProcessMonitor.tsx`)

@@ -80,22 +80,22 @@
 - [x] **커밋**: `feat: add process control APIs with error handling`
 
 #### 프론트엔드 UI 개발
-- [ ] 프로세스 모니터링 페이지 컴포넌트 생성 (`ProcessMonitor.tsx`)
-- [ ] 프로세스 테이블 컴포넌트 구현 (`ProcessTable.tsx`)
-- [ ] 프로세스 정보 표시를 위한 데이터 타입 정의
-- [ ] 실시간 업데이트를 위한 상태 관리 (Zustand/Redux)
-- [ ] **테스트**: 기본 프로세스 UI 컴포넌트 테스트
-- [ ] **커밋**: `feat: add basic process monitoring UI components`
-- [ ] 프로세스 정렬 기능 구현 (CPU, 메모리, 시간별)
-- [ ] 프로세스 검색 및 필터 기능 구현
-- [ ] 새로고침 간격 설정 UI 구현 (1초, 5초, 10초)
-- [ ] **테스트**: 프로세스 필터링 및 정렬 기능 테스트
-- [ ] **커밋**: `feat: implement process filtering and sorting features`
-- [ ] 프로세스 제어 버튼 (종료, 우선순위 변경) UI
-- [ ] 로딩 상태 및 에러 상태 처리 UI
-- [ ] 프로세스 모니터링 반응형 디자인 적용
-- [ ] **테스트**: 프로세스 제어 UI 및 반응형 디자인 테스트
-- [ ] **커밋**: `feat: complete process monitoring UI with controls`
+- [x] 프로세스 모니터링 페이지 컴포넌트 생성 (`ProcessMonitor.tsx`)
+- [x] 프로세스 테이블 컴포넌트 구현 (`ProcessTable.tsx`)
+- [x] 프로세스 정보 표시를 위한 데이터 타입 정의
+- [x] 실시간 업데이트를 위한 상태 관리 (React 상태)
+- [x] **테스트**: 기본 프로세스 UI 컴포넌트 테스트
+- [x] **커밋**: `feat: implement process monitoring frontend UI`
+- [x] 프로세스 정렬 기능 구현 (CPU, 메모리, 시간별)
+- [x] 프로세스 검색 및 필터 기능 구현
+- [x] 새로고침 간격 설정 UI 구현 (1초, 2초, 5초, 10초, 30초)
+- [x] **테스트**: 프로세스 필터링 및 정렬 기능 테스트
+- [x] **커밋**: `feat: implement process filtering and sorting features`
+- [x] 프로세스 제어 버튼 (종료, 우선순위 변경) UI
+- [x] 로딩 상태 및 에러 상태 처리 UI
+- [x] 프로세스 모니터링 반응형 디자인 적용
+- [x] **테스트**: 프로세스 제어 UI 및 반응형 디자인 테스트
+- [x] **커밋**: `feat: complete process monitoring UI with controls`
 
 #### WebSocket 실시간 통신
 - [ ] 프로세스 정보 실시간 스트리밍을 위한 WebSocket 서버 구현

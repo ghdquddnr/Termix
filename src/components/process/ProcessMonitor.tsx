@@ -20,6 +20,7 @@ import {
   terminateProcess,
   changeProcessPriority
 } from '@/ui/main-axios';
+import { useWebSocketMonitoring } from '@/hooks/useWebSocketMonitoring';
 import { ProcessTable } from './ProcessTable';
 import { ProcessFilter as ProcessFilterComponent } from './ProcessFilter';
 import { Button } from '@/components/ui/button';
@@ -63,9 +64,9 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
   // 상태 관리
   const [hosts, setHosts] = useState<HostInfo[]>([]);
   const [selectedHostId, setSelectedHostId] = useState<string>('');
-  const [processData, setProcessData] = useState<ProcessListResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useWebSocket, setUseWebSocket] = useState(true);
   
   // 정렬 및 필터링
   const [sortBy, setSortBy] = useState<ProcessSortField>(ProcessSortField.CPU);
@@ -81,6 +82,24 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
   });
   
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // WebSocket 훅
+  const {
+    connectionState,
+    isConnected: wsConnected,
+    processData: wsProcessData,
+    lastUpdate,
+    connect: wsConnect,
+    disconnect: wsDisconnect,
+    subscribe,
+    unsubscribe,
+    requestUpdate,
+    stats: wsStats
+  } = useWebSocketMonitoring();
+
+  // 프로세스 데이터 (WebSocket 또는 HTTP API)
+  const [httpProcessData, setHttpProcessData] = useState<ProcessListResponse | null>(null);
+  const processData = (useWebSocket && wsConnected) ? wsProcessData : httpProcessData;
 
   // 호스트 목록 로드
   useEffect(() => {
@@ -100,7 +119,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     loadHosts();
   }, [selectedHostId]);
 
-  // 프로세스 데이터 로드
+  // 프로세스 데이터 로드 (HTTP API 사용)
   const loadProcessData = useCallback(async () => {
     if (!selectedHostId) return;
 
@@ -115,7 +134,10 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
         limit: 100 // 기본 100개 제한
       });
       
-      setProcessData(data);
+      // WebSocket 모드가 아니거나, WebSocket이 연결되지 않은 경우 HTTP 데이터 사용
+      if (!useWebSocket || !wsConnected) {
+        setHttpProcessData(data);
+      }
     } catch (error) {
       console.error('Failed to load process data:', error);
       setError('프로세스 데이터 로드 실패');
@@ -123,7 +145,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     } finally {
       setLoading(false);
     }
-  }, [selectedHostId, sortBy, sortOrder, filter]);
+  }, [selectedHostId, sortBy, sortOrder, filter, useWebSocket]);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -132,9 +154,29 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     }
   }, [selectedHostId, loadProcessData]);
 
-  // 실시간 업데이트 관리
+  // WebSocket 연결 관리 - 실시간 모드가 활성화되고 호스트가 선택된 경우에만 연결
   useEffect(() => {
-    if (realtimeSettings.enabled && selectedHostId) {
+    if (useWebSocket && realtimeSettings.enabled && selectedHostId) {
+      // WebSocket 연결
+      if (!wsConnected) {
+        wsConnect();
+      }
+      
+      // 프로세스 모니터링 구독
+      subscribe(selectedHostId, 'processes');
+      
+      return () => {
+        unsubscribe(selectedHostId, 'processes');
+      };
+    } else if (wsConnected) {
+      // WebSocket 사용하지 않거나 실시간 모드가 비활성화된 경우 연결 해제
+      wsDisconnect();
+    }
+  }, [useWebSocket, realtimeSettings.enabled, selectedHostId, wsConnected, wsConnect, wsDisconnect, subscribe, unsubscribe]);
+
+  // 실시간 업데이트 관리 (HTTP API 폴링용)
+  useEffect(() => {
+    if (realtimeSettings.enabled && selectedHostId && !useWebSocket) {
       const interval = setInterval(loadProcessData, realtimeSettings.interval);
       setRefreshInterval(interval);
       
@@ -149,7 +191,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
         setRefreshInterval(null);
       }
     }
-  }, [realtimeSettings.enabled, realtimeSettings.interval, selectedHostId, loadProcessData]);
+  }, [realtimeSettings.enabled, realtimeSettings.interval, selectedHostId, loadProcessData, useWebSocket]);
 
   // 정렬 핸들러
   const handleSort = (field: ProcessSortField) => {
@@ -197,6 +239,11 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
       ...prev,
       enabled: !prev.enabled
     }));
+
+    // WebSocket 사용 시 즉시 업데이트 요청
+    if (useWebSocket && selectedHostId && !realtimeSettings.enabled) {
+      requestUpdate(selectedHostId);
+    }
   };
 
   // 선택된 호스트 정보
@@ -208,9 +255,14 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
   const connectionStatus = useMemo(() => {
     if (!selectedHostId) return 'disconnected';
     if (error) return 'error';
-    if (processData) return 'connected';
-    return 'connecting';
-  }, [selectedHostId, error, processData]);
+    
+    if (useWebSocket) {
+      return connectionState;
+    } else {
+      if (processData) return 'connected';
+      return 'connecting';
+    }
+  }, [selectedHostId, error, processData, useWebSocket, connectionState]);
 
   const getStatusIcon = () => {
     switch (connectionStatus) {
@@ -228,9 +280,11 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
   const getStatusText = () => {
     switch (connectionStatus) {
       case 'connected':
-        return '연결됨';
+        return useWebSocket ? '실시간 연결됨' : '연결됨';
       case 'connecting':
         return '연결 중...';
+      case 'reconnecting':
+        return '재연결 중...';
       case 'error':
         return '연결 오류';
       default:
@@ -265,18 +319,32 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
               <span className="text-sm">{getStatusText()}</span>
             </div>
             
-            {/* 실시간 업데이트 토글 */}
+            {/* WebSocket 모드 토글 */}
             <div className="flex items-center space-x-2">
               <Switch
-                id="realtime"
-                checked={realtimeSettings.enabled}
-                onCheckedChange={toggleRealtime}
-                disabled={!selectedHostId || connectionStatus !== 'connected'}
+                id="websocket"
+                checked={useWebSocket}
+                onCheckedChange={setUseWebSocket}
               />
-              <Label htmlFor="realtime" className="text-sm">
-                실시간 업데이트
+              <Label htmlFor="websocket" className="text-sm">
+                실시간 모드
               </Label>
             </div>
+
+            {/* 실시간 업데이트 토글 (HTTP 모드용) */}
+            {!useWebSocket && (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="realtime"
+                  checked={realtimeSettings.enabled}
+                  onCheckedChange={toggleRealtime}
+                  disabled={!selectedHostId || connectionStatus !== 'connected'}
+                />
+                <Label htmlFor="realtime" className="text-sm">
+                  자동 새로고침
+                </Label>
+              </div>
+            )}
           </div>
         </div>
 
@@ -315,28 +383,44 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
                 )}
               </div>
 
-              {/* 새로고침 간격 */}
-              <div className="space-y-2">
-                <Label>새로고침 간격</Label>
-                <Select 
-                  value={realtimeSettings.interval.toString()} 
-                  onValueChange={(value) => setRealtimeSettings(prev => ({
-                    ...prev,
-                    interval: parseInt(value, 10)
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEFAULT_REFRESH_INTERVALS.map((option) => (
-                      <SelectItem key={option.value} value={option.value.toString()}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* 새로고침 간격 (HTTP 모드용) */}
+              {!useWebSocket && (
+                <div className="space-y-2">
+                  <Label>새로고침 간격</Label>
+                  <Select 
+                    value={realtimeSettings.interval.toString()} 
+                    onValueChange={(value) => setRealtimeSettings(prev => ({
+                      ...prev,
+                      interval: parseInt(value, 10)
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEFAULT_REFRESH_INTERVALS.map((option) => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* WebSocket 통계 (실시간 모드용) */}
+              {useWebSocket && wsConnected && (
+                <div className="space-y-2">
+                  <Label>연결 통계</Label>
+                  <div className="text-xs space-y-1">
+                    <div>메시지 수신: {wsStats.messagesReceived}</div>
+                    <div>메시지 전송: {wsStats.messagesSent}</div>
+                    {lastUpdate && (
+                      <div>마지막 업데이트: {lastUpdate.toLocaleTimeString()}</div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 필터 토글 */}
               <div className="space-y-2">
@@ -355,12 +439,18 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
               <div className="space-y-2">
                 <Label>수동 새로고침</Label>
                 <Button
-                  onClick={loadProcessData}
-                  disabled={loading || !selectedHostId}
+                  onClick={() => {
+                    if (useWebSocket && selectedHostId) {
+                      requestUpdate(selectedHostId);
+                    } else {
+                      loadProcessData();
+                    }
+                  }}
+                  disabled={loading || !selectedHostId || (useWebSocket && !wsConnected)}
                   className="w-full"
                 >
                   <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  새로고침
+                  {useWebSocket ? '즉시 업데이트' : '새로고침'}
                 </Button>
               </div>
             </div>

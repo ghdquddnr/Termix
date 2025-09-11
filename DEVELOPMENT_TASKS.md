@@ -98,12 +98,12 @@
 - [x] **커밋**: `feat: complete process monitoring UI with controls`
 
 #### WebSocket 실시간 통신
-- [ ] 프로세스 정보 실시간 스트리밍을 위한 WebSocket 서버 구현
-- [ ] 클라이언트 WebSocket 연결 및 메시지 처리
-- [ ] 연결 끊김 시 자동 재연결 로직 구현
-- [ ] WebSocket 성능 최적화 (필요시에만 업데이트)
-- [ ] **테스트**: WebSocket 실시간 통신 테스트
-- [ ] **커밋**: `feat: implement real-time process monitoring with WebSocket`
+- [x] 프로세스 정보 실시간 스트리밍을 위한 WebSocket 서버 구현
+- [x] 클라이언트 WebSocket 연결 및 메시지 처리
+- [x] 연결 끊김 시 자동 재연결 로직 구현
+- [x] WebSocket 성능 최적화 (필요시에만 업데이트)
+- [x] **테스트**: WebSocket 실시간 통신 테스트
+- [x] **커밋**: `feat: implement real-time process monitoring with WebSocket`
 
 #### 통합 테스트 및 마무리
 - [ ] **테스트**: 프로세스 모니터링 전체 기능 E2E 테스트

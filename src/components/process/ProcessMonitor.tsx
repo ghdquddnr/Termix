@@ -154,9 +154,9 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     }
   }, [selectedHostId, loadProcessData]);
 
-  // WebSocket 연결 관리 - 실시간 모드가 활성화되고 호스트가 선택된 경우에만 연결
+  // WebSocket 연결 관리 - WebSocket 모드가 활성화되고 호스트가 선택된 경우에만 연결
   useEffect(() => {
-    if (useWebSocket && realtimeSettings.enabled && selectedHostId) {
+    if (useWebSocket && selectedHostId) {
       // WebSocket 연결
       if (!wsConnected) {
         wsConnect();
@@ -169,10 +169,10 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
         unsubscribe(selectedHostId, 'processes');
       };
     } else if (wsConnected) {
-      // WebSocket 사용하지 않거나 실시간 모드가 비활성화된 경우 연결 해제
+      // WebSocket 사용하지 않는 경우 연결 해제
       wsDisconnect();
     }
-  }, [useWebSocket, realtimeSettings.enabled, selectedHostId, wsConnected, wsConnect, wsDisconnect, subscribe, unsubscribe]);
+  }, [useWebSocket, selectedHostId, wsConnected, wsConnect, wsDisconnect, subscribe, unsubscribe]);
 
   // 실시간 업데이트 관리 (HTTP API 폴링용)
   useEffect(() => {
@@ -241,7 +241,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     }));
 
     // WebSocket 사용 시 즉시 업데이트 요청
-    if (useWebSocket && selectedHostId && !realtimeSettings.enabled) {
+    if (useWebSocket && selectedHostId && !realtimeSettings.enabled && wsConnected) {
       requestUpdate(selectedHostId);
     }
   };

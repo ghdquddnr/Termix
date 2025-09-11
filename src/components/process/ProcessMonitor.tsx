@@ -149,7 +149,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
         setRefreshInterval(null);
       }
     }
-  }, [realtimeSettings.enabled, realtimeSettings.interval, selectedHostId, loadProcessData, refreshInterval]);
+  }, [realtimeSettings.enabled, realtimeSettings.interval, selectedHostId, loadProcessData]);
 
   // 정렬 핸들러
   const handleSort = (field: ProcessSortField) => {

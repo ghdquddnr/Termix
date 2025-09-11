@@ -106,9 +106,9 @@
 - [x] **커밋**: `feat: implement real-time process monitoring with WebSocket`
 
 #### 통합 테스트 및 마무리
-- [ ] **테스트**: 프로세스 모니터링 전체 기능 E2E 테스트
-- [ ] **커밋**: `test: add comprehensive process monitoring tests`
-- [ ] **푸시**: Phase 1.1 완료된 기능 원격 저장소로 푸시
+- [x] **테스트**: 프로세스 모니터링 전체 기능 E2E 테스트
+- [x] **커밋**: `test: add comprehensive process monitoring tests`
+- [x] **푸시**: Phase 1.1 완료된 기능 원격 저장소로 푸시
 
 ### ⚙️ 1.2 서비스 상태 관리
 

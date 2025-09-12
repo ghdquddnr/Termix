@@ -1115,3 +1115,196 @@ export async function changeProcessPriority(
         handleApiError(error, 'change process priority');
     }
 }
+
+// ============================================================================
+// SERVICE MANAGEMENT
+// ============================================================================
+
+// Service Management Types
+export interface ServiceInfo {
+    name: string;
+    description: string;
+    unitType: string;
+    loadState: string;
+    activeState: string;
+    subState: string;
+    enabledState?: string;
+    preset?: string;
+    mainPid?: number;
+    memory?: string;
+    cpuUsage?: string;
+    activeEnterTimestamp?: string;
+    activeExitTimestamp?: string;
+    inactiveEnterTimestamp?: string;
+    inactiveExitTimestamp?: string;
+    execStart?: string;
+    execReload?: string;
+    workingDirectory?: string;
+    user?: string;
+    group?: string;
+    unitFileState?: string;
+    unitFilePreset?: string;
+    restartPolicy?: string;
+    restarts?: number;
+    canStart?: boolean;
+    canStop?: boolean;
+    canReload?: boolean;
+    canRestart?: boolean;
+    canEnable?: boolean;
+    canDisable?: boolean;
+}
+
+export interface ServiceListOptions {
+    page?: number;
+    limit?: number;
+    search?: string;
+    type?: string;
+    state?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    enabledOnly?: boolean;
+    loadedOnly?: boolean;
+}
+
+export interface ServiceListResponse {
+    services: ServiceInfo[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+    statistics: {
+        total: number;
+        active: number;
+        inactive: number;
+        failed: number;
+        enabled: number;
+        disabled: number;
+    };
+}
+
+export interface ServiceActionResponse {
+    success: boolean;
+    message: string;
+    serviceName: string;
+    action: string;
+    previousState?: string;
+    newState?: string;
+    timestamp: string;
+}
+
+export interface ServiceLogResponse {
+    logs: string[];
+    hasMore: boolean;
+    totalLines: number;
+    since?: string;
+    until?: string;
+}
+
+export type ServiceAction = 'start' | 'stop' | 'restart' | 'reload' | 'enable' | 'disable';
+
+// Service Management API Functions
+export async function getServiceList(
+    hostId: number,
+    options: ServiceListOptions = {}
+): Promise<ServiceListResponse> {
+    try {
+        const params = new URLSearchParams();
+        
+        if (options.page) params.append('page', options.page.toString());
+        if (options.limit) params.append('limit', options.limit.toString());
+        if (options.search) params.append('search', options.search);
+        if (options.type) params.append('type', options.type);
+        if (options.state) params.append('state', options.state);
+        if (options.sortBy) params.append('sortBy', options.sortBy);
+        if (options.sortOrder) params.append('sortOrder', options.sortOrder);
+        if (options.enabledOnly) params.append('enabledOnly', 'true');
+        if (options.loadedOnly) params.append('loadedOnly', 'true');
+        
+        const queryString = params.toString();
+        const url = `/services/${hostId}${queryString ? '?' + queryString : ''}`;
+        
+        const serviceApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+        const response = await serviceApi.get(url);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch service list');
+    }
+}
+
+export async function getServiceStatus(
+    hostId: number,
+    serviceName: string
+): Promise<ServiceInfo> {
+    try {
+        const serviceApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+        const response = await serviceApi.get(`/services/${hostId}/${serviceName}/status`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, `fetch service status for ${serviceName}`);
+    }
+}
+
+export async function performServiceAction(
+    hostId: number,
+    serviceName: string,
+    action: ServiceAction
+): Promise<ServiceActionResponse> {
+    try {
+        const serviceApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+        const response = await serviceApi.post(`/services/${hostId}/${serviceName}/action`, {
+            action
+        });
+        return response.data;
+    } catch (error) {
+        handleApiError(error, `perform ${action} on service ${serviceName}`);
+    }
+}
+
+export async function getServiceLogs(
+    hostId: number,
+    serviceName: string,
+    options: {
+        lines?: number;
+        since?: string;
+        until?: string;
+        follow?: boolean;
+    } = {}
+): Promise<ServiceLogResponse> {
+    try {
+        const params = new URLSearchParams();
+        
+        if (options.lines) params.append('lines', options.lines.toString());
+        if (options.since) params.append('since', options.since);
+        if (options.until) params.append('until', options.until);
+        if (options.follow) params.append('follow', 'true');
+        
+        const queryString = params.toString();
+        const url = `/services/${hostId}/${serviceName}/logs${queryString ? '?' + queryString : ''}`;
+        
+        const serviceApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+        const response = await serviceApi.get(url);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, `fetch logs for service ${serviceName}`);
+    }
+}
+
+export async function getServiceStatistics(hostId: number): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+    failed: number;
+    enabled: number;
+    disabled: number;
+    byType: Record<string, number>;
+}> {
+    try {
+        const serviceApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+        const response = await serviceApi.get(`/services/${hostId}/statistics`);
+        return response.data;
+    } catch (error) {
+        handleApiError(error, 'fetch service statistics');
+    }
+}

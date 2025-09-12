@@ -3,7 +3,7 @@ import {
     Computer,
     Server,
     File,
-    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity
+    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity, Cog
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -142,6 +142,17 @@ export function LeftSidebar({
             return;
         }
         const id = addTab({type: 'process_monitor', title: '프로세스 모니터링'} as any);
+        setCurrentTab(id);
+    };
+
+    const serviceManagerTab = tabList.find((t) => t.type === 'service_manager');
+    const openServiceManagerTab = () => {
+        if (isSplitScreenActive) return;
+        if (serviceManagerTab) {
+            setCurrentTab(serviceManagerTab.id);
+            return;
+        }
+        const id = addTab({type: 'service_manager', title: '서비스 관리'} as any);
         setCurrentTab(id);
     };
 
@@ -316,6 +327,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Activity strokeWidth="2.5"/>
                                 프로세스 모니터링
+                            </Button>
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                                    onClick={openServiceManagerTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <Cog strokeWidth="2.5"/>
+                                서비스 관리
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

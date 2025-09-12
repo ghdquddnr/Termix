@@ -113,14 +113,18 @@
 ### ⚙️ 1.2 서비스 상태 관리
 
 #### 백엔드 API 개발
-- [ ] systemd 서비스 목록 조회 API 구현 (`GET /api/services/:hostId`)
-- [ ] `systemctl list-units` 명령어 결과 파싱 함수
-- [ ] 서비스 정보 타입 정의 (이름, 상태, 설명)
-- [ ] 서비스 제어 API 구현 (`POST /api/services/:hostId/:serviceName/action`)
-- [ ] 서비스 상태 조회 API 구현 (`GET /api/services/:hostId/:serviceName/status`)
-- [ ] 서비스 로그 조회 API 구현 (`GET /api/services/:hostId/:serviceName/logs`)
-- [ ] systemctl 명령어 실행 권한 검사 구현
-- [ ] 서비스 관리 API 단위 테스트 작성
+- [x] systemd 서비스 목록 조회 API 구현 (`GET /api/services/:hostId`)
+- [x] `systemctl list-units` 명령어 결과 파싱 함수
+- [x] 서비스 정보 타입 정의 (이름, 상태, 설명)
+- [x] 서비스 제어 API 구현 (`POST /api/services/:hostId/:serviceName/action`)
+- [x] 서비스 상태 조회 API 구현 (`GET /api/services/:hostId/:serviceName/status`)
+- [x] 서비스 로그 조회 API 구현 (`GET /api/services/:hostId/:serviceName/logs`)
+- [x] systemctl 명령어 실행 권한 검사 구현
+- [x] 서비스 관리 API 단위 테스트 작성
+- [x] SSH API 호환성 수정 및 CommandResult 객체 처리
+- [x] 에러 핸들링 및 구조화된 에러 코드 시스템 구현
+- [x] **테스트**: 서비스 API 엔드포인트 실제 동작 검증 완료
+- [x] **커밋**: `feat: implement systemd service management backend API`
 
 #### 프론트엔드 UI 개발
 - [ ] 서비스 관리 페이지 컴포넌트 생성 (`ServiceManager.tsx`)

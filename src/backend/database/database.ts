@@ -5,6 +5,7 @@ import sshRoutes from './routes/ssh.js';
 import alertRoutes from './routes/alerts.js';
 import themeRoutes from './routes/themes.js';
 import monitoringRoutes from './routes/monitoring.js';
+import servicesRoutes from './routes/services.js';
 import chalk from 'chalk';
 import cors from 'cors';
 import fetch from 'node-fetch';
@@ -242,6 +243,7 @@ app.use('/ssh', sshRoutes);
 app.use('/alerts', alertRoutes);
 app.use('/themes', themeRoutes);
 app.use('/monitoring', monitoringRoutes);
+app.use('/services', servicesRoutes);
 
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', err);

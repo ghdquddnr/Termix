@@ -312,8 +312,8 @@ export function LeftSidebar({
                                 {t('nav.hostManager')}
                             </Button>
                             <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
-                                    onClick={openProcessMonitorTab} disabled={!!processMonitorTab || isSplitScreenActive}
-                                    title={processMonitorTab ? '프로세스 모니터링이 이미 열려있습니다' : isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                    onClick={openProcessMonitorTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Activity strokeWidth="2.5"/>
                                 프로세스 모니터링
                             </Button>

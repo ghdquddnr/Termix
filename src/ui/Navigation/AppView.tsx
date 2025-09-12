@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {Terminal} from "@/ui/Apps/Terminal/Terminal.tsx";
 import {Server as ServerView} from "@/ui/Apps/Server/Server.tsx";
 import {FileManager} from "@/ui/Apps/File Manager/FileManager.tsx";
+import {ProcessMonitor} from "@/components/process/ProcessMonitor.tsx";
 import {useTabs} from "@/ui/Navigation/Tabs/TabContext.tsx";
 import {ResizablePanelGroup, ResizablePanel, ResizableHandle} from '@/components/ui/resizable.tsx';
 import * as ResizablePrimitive from "react-resizable-panels";
@@ -17,7 +18,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     const {tabs, currentTab, allSplitScreenTab} = useTabs() as any;
     const {state: sidebarState} = useSidebar();
 
-    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager');
+    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor');
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -173,12 +174,16 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                                         isTopbarOpen={isTopbarOpen}
                                         embedded
                                     />
-                                ) : (
+                                ) : t.type === 'file_manager' ? (
                                     <FileManager
                                         embedded
                                         initialHost={t.hostConfig}
                                     />
-                                )}
+                                ) : t.type === 'process_monitor' ? (
+                                    <ProcessMonitor
+                                        isTopbarOpen={isTopbarOpen}
+                                    />
+                                ) : null}
                             </div>
                         </div>
                     );

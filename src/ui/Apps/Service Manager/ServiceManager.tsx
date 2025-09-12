@@ -54,16 +54,21 @@ export function ServiceManager({ onSelectView, isTopbarOpen }: ServiceManagerPro
     useEffect(() => {
         if (selectedHost) {
             loadServices();
-            loadStatistics();
         }
     }, [selectedHost, searchQuery, filterState, filterType]);
+
+    // 서비스 목록이 로드된 후 통계 계산
+    useEffect(() => {
+        if (services.length > 0) {
+            loadStatistics();
+        }
+    }, [services]);
 
     // 자동 새로고침 설정
     useEffect(() => {
         if (autoRefresh && selectedHost) {
             const interval = setInterval(() => {
-                loadServices();
-                loadStatistics();
+                loadServices(); // 통계는 services 변경 시 자동으로 계산됨
             }, 5000); // 5초마다 새로고침
             setRefreshInterval(interval);
             
@@ -119,10 +124,23 @@ export function ServiceManager({ onSelectView, isTopbarOpen }: ServiceManagerPro
         if (!selectedHost) return;
         
         try {
-            const stats = await getServiceStatistics(selectedHost);
+            // 서비스 목록에서 직접 통계 계산
+            const stats = {
+                total: services.length,
+                active: services.filter(s => s.activeState === 'active').length,
+                inactive: services.filter(s => s.activeState === 'inactive').length,
+                failed: services.filter(s => s.activeState === 'failed').length,
+                enabled: services.filter(s => s.enabledState === 'enabled').length,
+                disabled: services.filter(s => s.enabledState === 'disabled').length,
+                byType: services.reduce((acc, service) => {
+                    const type = service.unitType || 'unknown';
+                    acc[type] = (acc[type] || 0) + 1;
+                    return acc;
+                }, {} as Record<string, number>)
+            };
             setStatistics(stats);
         } catch (err) {
-            console.warn("서비스 통계를 불러오는데 실패했습니다.", err);
+            console.warn("서비스 통계를 계산하는데 실패했습니다.", err);
         }
     };
 
@@ -132,9 +150,8 @@ export function ServiceManager({ onSelectView, isTopbarOpen }: ServiceManagerPro
         try {
             setLoading(true);
             await performServiceAction(selectedHost, serviceName, action);
-            // 액션 후 서비스 목록과 통계 다시 로드
+            // 액션 후 서비스 목록 다시 로드 (통계는 자동으로 계산됨)
             await loadServices();
-            await loadStatistics();
         } catch (err) {
             setError(`서비스 ${action} 작업 중 오류가 발생했습니다.`);
         } finally {
@@ -149,8 +166,7 @@ export function ServiceManager({ onSelectView, isTopbarOpen }: ServiceManagerPro
 
     const handleRefresh = useCallback(() => {
         if (selectedHost) {
-            loadServices();
-            loadStatistics();
+            loadServices(); // 통계는 services 변경 시 자동으로 계산됨
         }
     }, [selectedHost]);
 

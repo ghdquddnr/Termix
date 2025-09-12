@@ -25,7 +25,7 @@ import {
     SelectTrigger,
     SelectValue 
 } from "@/components/ui/select.tsx";
-import { getServiceLogs, type ServiceLogResponse } from "@/ui/main-axios.ts";
+import { getServiceLogs, type ServiceLogResponse, type ServiceLogEntry } from "@/ui/main-axios.ts";
 
 interface ServiceLogViewerProps {
     hostId: number;
@@ -35,11 +35,11 @@ interface ServiceLogViewerProps {
 }
 
 export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: ServiceLogViewerProps): React.ReactElement {
-    const [logs, setLogs] = useState<string[]>([]);
+    const [logs, setLogs] = useState<ServiceLogEntry[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [filteredLogs, setFilteredLogs] = useState<string[]>([]);
+    const [filteredLogs, setFilteredLogs] = useState<ServiceLogEntry[]>([]);
     const [lines, setLines] = useState<number>(100);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
@@ -103,7 +103,9 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
             setFilteredLogs(logs);
         } else {
             const filtered = logs.filter(log => 
-                log.toLowerCase().includes(searchQuery.toLowerCase())
+                log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                log.comm.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                log.hostname.toLowerCase().includes(searchQuery.toLowerCase())
             );
             setFilteredLogs(filtered);
         }
@@ -123,7 +125,10 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
 
     // 로그 다운로드
     const downloadLogs = () => {
-        const logContent = logs.join('\n');
+        const logContent = logs.map(log => {
+            const timestamp = new Date(log.timestamp).toLocaleString();
+            return `[${timestamp}] ${log.hostname} ${log.comm}[${log.pid}]: ${log.message}`;
+        }).join('\n');
         const blob = new Blob([logContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -138,7 +143,11 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
     // 로그 복사
     const copyLogs = async () => {
         try {
-            await navigator.clipboard.writeText(filteredLogs.join('\n'));
+            const logText = filteredLogs.map(log => {
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                return `[${timestamp}] ${log.hostname} ${log.comm}[${log.pid}]: ${log.message}`;
+            }).join('\n');
+            await navigator.clipboard.writeText(logText);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -147,10 +156,17 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
     };
 
     // 로그 라인 렌더링
-    const renderLogLine = (line: string, index: number) => {
-        const isError = line.toLowerCase().includes('error') || line.toLowerCase().includes('fail');
-        const isWarning = line.toLowerCase().includes('warn') || line.toLowerCase().includes('warning');
-        const isInfo = line.toLowerCase().includes('info');
+    const renderLogLine = (logEntry: ServiceLogEntry, index: number) => {
+        const message = logEntry.message || '';
+        const timestamp = new Date(logEntry.timestamp).toLocaleString();
+        const processInfo = `${logEntry.comm}[${logEntry.pid}]`;
+        const fullLine = `[${timestamp}] ${logEntry.hostname} ${processInfo}: ${message}`;
+        
+        const isError = message.toLowerCase().includes('error') || message.toLowerCase().includes('fail');
+        const isWarning = message.toLowerCase().includes('warn') || message.toLowerCase().includes('warning');
+        const isInfo = message.toLowerCase().includes('info');
+        const isStart = message.toLowerCase().includes('start');
+        const isStopped = message.toLowerCase().includes('stop');
         
         let className = 'font-mono text-xs leading-relaxed ';
         
@@ -158,36 +174,60 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
             className += 'text-red-400';
         } else if (isWarning) {
             className += 'text-yellow-400';
-        } else if (isInfo) {
+        } else if (isInfo || isStart) {
             className += 'text-blue-400';
+        } else if (isStopped) {
+            className += 'text-orange-400';
         } else {
             className += 'text-gray-300';
         }
 
         // 검색어 하이라이트
-        if (searchQuery && line.toLowerCase().includes(searchQuery.toLowerCase())) {
-            const regex = new RegExp(`(${searchQuery})`, 'gi');
-            const parts = line.split(regex);
+        if (searchQuery) {
+            const searchLower = searchQuery.toLowerCase();
+            const hasMatch = message.toLowerCase().includes(searchLower) || 
+                           logEntry.comm.toLowerCase().includes(searchLower) ||
+                           logEntry.hostname.toLowerCase().includes(searchLower);
             
-            return (
-                <div key={index} className={className}>
-                    {parts.map((part, partIndex) => 
-                        regex.test(part) ? (
-                            <mark key={partIndex} className="bg-yellow-500/30 text-yellow-300">
-                                {part}
-                            </mark>
-                        ) : (
-                            <span key={partIndex}>{part}</span>
-                        )
-                    )}
-                </div>
-            );
+            if (hasMatch) {
+                return (
+                    <div key={index} className={className}>
+                        <span className="text-gray-500">[{timestamp}]</span>
+                        <span className="text-gray-400 ml-2">{logEntry.hostname}</span>
+                        <span className="text-blue-300 ml-2">{processInfo}:</span>
+                        <span className="ml-2">
+                            {highlightSearchTerm(message, searchQuery)}
+                        </span>
+                    </div>
+                );
+            }
         }
 
         return (
             <div key={index} className={className}>
-                {line}
+                <span className="text-gray-500">[{timestamp}]</span>
+                <span className="text-gray-400 ml-2">{logEntry.hostname}</span>
+                <span className="text-blue-300 ml-2">{processInfo}:</span>
+                <span className="ml-2">{message}</span>
             </div>
+        );
+    };
+
+    // 검색어 하이라이트 헬퍼 함수
+    const highlightSearchTerm = (text: string, searchTerm: string) => {
+        if (!searchTerm) return text;
+        
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const parts = text.split(regex);
+        
+        return parts.map((part, partIndex) => 
+            regex.test(part) ? (
+                <mark key={partIndex} className="bg-yellow-500/30 text-yellow-300">
+                    {part}
+                </mark>
+            ) : (
+                <span key={partIndex}>{part}</span>
+            )
         );
     };
 
@@ -323,7 +363,7 @@ export function ServiceLogViewer({ hostId, serviceName, isOpen, onClose }: Servi
                                     </div>
                                 ) : (
                                     <>
-                                        {filteredLogs.map((line, index) => renderLogLine(line, index))}
+                                        {filteredLogs.map((logEntry, index) => renderLogLine(logEntry, index))}
                                         <div ref={bottomRef} />
                                     </>
                                 )}

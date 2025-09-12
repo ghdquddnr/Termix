@@ -1194,10 +1194,26 @@ export interface ServiceActionResponse {
     timestamp: string;
 }
 
+export interface ServiceLogEntry {
+    timestamp: string;
+    priority: number;
+    facility: string;
+    message: string;
+    hostname: string;
+    pid: number;
+    uid: number;
+    gid: number;
+    comm: string;
+    exe: string;
+    cmdline: string;
+}
+
 export interface ServiceLogResponse {
-    logs: string[];
+    serviceName: string;
+    logs: ServiceLogEntry[];
     hasMore: boolean;
     totalLines: number;
+    timestamp: string;
     since?: string;
     until?: string;
 }

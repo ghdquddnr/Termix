@@ -12,6 +12,7 @@ import { getUserInfo } from "@/ui/main-axios.ts";
 import { ThemeSettings } from "@/components/theme/ThemeSettings";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProcessMonitor } from "@/components/process/ProcessMonitor";
+import { ServiceManager } from "@/ui/Apps/Service Manager/ServiceManager";
 
 function getCookie(name: string) {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -93,6 +94,7 @@ function AppContent() {
     const showProfile = currentTabData?.type === 'profile';
     const showThemeSettings = currentTabData?.type === 'theme_settings';
     const showProcessMonitor = currentTabData?.type === 'process_monitor';
+    const showServiceManager = currentTabData?.type === 'service_manager';
 
     return (
         <div>
@@ -238,6 +240,20 @@ function AppContent() {
                         }}
                     >
                         <ProcessMonitor isTopbarOpen={isTopbarOpen} />
+                    </div>
+
+                    <div
+                        className="h-screen w-full"
+                        style={{
+                            visibility: showServiceManager ? "visible" : "hidden",
+                            pointerEvents: showServiceManager ? "auto" : "none",
+                            height: showServiceManager ? "100vh" : 0,
+                            width: showServiceManager ? "100%" : 0,
+                            position: showServiceManager ? "static" : "absolute",
+                            overflow: "auto",
+                        }}
+                    >
+                        <ServiceManager onSelectView={handleSelectView} isTopbarOpen={isTopbarOpen} />
                     </div>
 
                     <TopNavbar isTopbarOpen={isTopbarOpen} setIsTopbarOpen={setIsTopbarOpen}/>

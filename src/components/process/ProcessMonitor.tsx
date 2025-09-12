@@ -76,7 +76,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
   
   // 실시간 업데이트
   const [realtimeSettings, setRealtimeSettings] = useState<RealtimeSettings>({
-    enabled: false,
+    enabled: false, // 기본값은 비활성화, 사용자가 수동으로 활성화
     interval: 5000,
     autoStart: false
   });
@@ -154,9 +154,9 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     }
   }, [selectedHostId, loadProcessData]);
 
-  // WebSocket 연결 관리 - WebSocket 모드가 활성화되고 호스트가 선택된 경우에만 연결
+  // WebSocket 연결 관리 - 실시간 모드가 활성화되고 호스트가 선택된 경우에만 연결
   useEffect(() => {
-    if (useWebSocket && selectedHostId) {
+    if (useWebSocket && selectedHostId && realtimeSettings.enabled) {
       // WebSocket 연결
       if (!wsConnected) {
         wsConnect();
@@ -169,10 +169,10 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
         unsubscribe(selectedHostId, 'processes');
       };
     } else if (wsConnected) {
-      // WebSocket 사용하지 않는 경우 연결 해제
+      // WebSocket 사용하지 않는 경우 또는 실시간 모드가 비활성화된 경우 연결 해제
       wsDisconnect();
     }
-  }, [useWebSocket, selectedHostId, wsConnected, wsConnect, wsDisconnect, subscribe, unsubscribe]);
+  }, [useWebSocket, selectedHostId, realtimeSettings.enabled, wsConnected, wsConnect, wsDisconnect, subscribe, unsubscribe]);
 
   // 실시간 업데이트 관리 (HTTP API 폴링용)
   useEffect(() => {
@@ -240,9 +240,14 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
       enabled: !prev.enabled
     }));
 
-    // WebSocket 사용 시 즉시 업데이트 요청
-    if (useWebSocket && selectedHostId && !realtimeSettings.enabled && wsConnected) {
-      requestUpdate(selectedHostId);
+    // WebSocket 사용 시 즉시 업데이트 요청 (활성화될 때)
+    if (useWebSocket && selectedHostId && !realtimeSettings.enabled) {
+      // 곧 활성화될 예정이므로 연결 후 업데이트 요청을 위해 약간의 지연 추가
+      setTimeout(() => {
+        if (wsConnected) {
+          requestUpdate(selectedHostId);
+        }
+      }, 100);
     }
   };
 
@@ -257,12 +262,14 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
     if (error) return 'error';
     
     if (useWebSocket) {
+      // 실시간 모니터링이 활성화되어야만 WebSocket 연결됨
+      if (!realtimeSettings.enabled) return 'disconnected';
       return connectionState;
     } else {
       if (processData) return 'connected';
       return 'connecting';
     }
-  }, [selectedHostId, error, processData, useWebSocket, connectionState]);
+  }, [selectedHostId, error, processData, useWebSocket, connectionState, realtimeSettings.enabled]);
 
   const getStatusIcon = () => {
     switch (connectionStatus) {
@@ -288,7 +295,7 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
       case 'error':
         return '연결 오류';
       default:
-        return '연결 안됨';
+        return useWebSocket && !realtimeSettings.enabled ? '실시간 모니터링 비활성화됨' : '연결 안됨';
     }
   };
 
@@ -331,20 +338,18 @@ export function ProcessMonitor({ isTopbarOpen = true }: ProcessMonitorProps) {
               </Label>
             </div>
 
-            {/* 실시간 업데이트 토글 (HTTP 모드용) */}
-            {!useWebSocket && (
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="realtime"
-                  checked={realtimeSettings.enabled}
-                  onCheckedChange={toggleRealtime}
-                  disabled={!selectedHostId || connectionStatus !== 'connected'}
-                />
-                <Label htmlFor="realtime" className="text-sm">
-                  자동 새로고침
-                </Label>
-              </div>
-            )}
+            {/* 실시간 업데이트 토글 */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="realtime"
+                checked={realtimeSettings.enabled}
+                onCheckedChange={toggleRealtime}
+                disabled={!selectedHostId}
+              />
+              <Label htmlFor="realtime" className="text-sm">
+                {useWebSocket ? '실시간 모니터링' : '자동 새로고침'}
+              </Label>
+            </div>
           </div>
         </div>
 

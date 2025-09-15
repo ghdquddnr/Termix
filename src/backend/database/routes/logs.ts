@@ -131,12 +131,32 @@ router.get('/:hostId', async (req: Request, res: Response) => {
   let conn: Client | undefined;
   try {
     conn = await sshConnectionPool.getConnection(sshConfig);
-    // Use find + stat to get size and mtime; restrict depth and files
-    const cmd = `find ${escapePath(basePath)} -maxdepth ${Math.max(1, Math.min(maxDepth, 4))} -type f \
-      \( -name '*.log' -o -name '*.gz' -o -name '*.txt' -o -name 'syslog*' -o -name 'messages*' -o -name '*.journal' \) 2>/dev/null \
-      -printf '%s|%T@|%p\n' | sort -t'|' -k3 | head -n ${Math.max(1, Math.min(limit, 2000))}`;
-    const result = await executeSSHCommand(conn, cmd, { timeout: 15000 });
-    const files = parseFindStatOutput(result.stdout);
+    const depth = Math.max(1, Math.min(maxDepth, 4));
+    const cap = Math.max(1, Math.min(limit, 2000));
+    const pattern = `\\( -name '*.log' -o -name '*.gz' -o -name '*.txt' -o -name 'syslog*' -o -name 'messages*' -o -name '*.journal' \\)`;
+
+    let output = '';
+    try {
+      const cmdPrintf = `find ${escapePath(basePath)} -maxdepth ${depth} -type f ${pattern} 2>/dev/null -printf '%s|%T@|%p\\n' | sort -t'|' -k3 | head -n ${cap}`;
+      const r = await executeSSHCommand(conn, cmdPrintf, { timeout: 15000 });
+      output = r.stdout;
+    } catch {
+      try {
+        const cmdStatGNU = `find ${escapePath(basePath)} -maxdepth ${depth} -type f ${pattern} -exec stat -c '%s|%Y|%n' {} + 2>/dev/null | head -n ${cap}`;
+        const r2 = await executeSSHCommand(conn, cmdStatGNU, { timeout: 20000 });
+        output = r2.stdout;
+      } catch {
+        try {
+          const cmdStatBSD = `find ${escapePath(basePath)} -maxdepth ${depth} -type f ${pattern} -exec stat -f '%z|%m|%N' {} + 2>/dev/null | head -n ${cap}`;
+          const r3 = await executeSSHCommand(conn, cmdStatBSD, { timeout: 20000 });
+          output = r3.stdout;
+        } catch {
+          output = '';
+        }
+      }
+    }
+
+    const files = parseFindStatOutput(output);
     res.json({ path: basePath, count: files.length, files });
   } catch (error) {
     // Graceful empty response on SSH/command failure (avoid 500 in console)
@@ -174,7 +194,9 @@ router.post('/:hostId/search', async (req: Request, res: Response) => {
     } else {
       const dir = escapePath(path || '/var/log');
       // target files in directory
-      targetExpr = `$(find ${dir} -maxdepth 2 -type f -name '*.log' -o -name 'syslog*' -o -name 'messages*' 2>/dev/null)`;
+      targetExpr = `$(find ${dir} -maxdepth 2 -type f \\
+        \\( -name '*.log' -o -name 'syslog*' -o -name 'messages*' \\)
+      2>/dev/null)`;
     }
 
     const safeQuery = safeGrep(query);

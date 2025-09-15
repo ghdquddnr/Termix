@@ -23,6 +23,15 @@ import {
   paginateProcesses
 } from '../../utils/process-parser.js';
 import {
+  parseNetstatOutput,
+  parseSsOutput,
+  parseNetworkInterfaceStats,
+  parseUfwStatus,
+  parseIptablesStatus,
+  extractListeningPorts,
+  calculateNetworkStatistics
+} from '../../utils/network-parser.js';
+import {
   type ProcessInfo,
   type ProcessListResponse,
   type ProcessListOptions,
@@ -31,6 +40,17 @@ import {
   ProcessErrorCode,
   type SystemInfo
 } from '../../types/process-monitoring.js';
+import {
+  type NetworkConnection,
+  type NetworkMonitoringResponse,
+  type NetworkMonitoringOptions,
+  type NetworkConnectionFilter,
+  NetworkErrorCode,
+  type NetworkMonitoringError,
+  type ListeningPort,
+  type NetworkStatistics,
+  type FirewallStatus
+} from '../../types/network-monitoring.js';
 import { db } from '../db/index.js';
 import { sshData } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -89,6 +109,22 @@ function createErrorResponse(
   message: string,
   details?: any
 ): ProcessMonitoringError {
+  return {
+    code,
+    message,
+    details,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * 네트워크 모니터링 에러 응답을 생성합니다.
+ */
+function createNetworkErrorResponse(
+  code: NetworkErrorCode,
+  message: string,
+  details?: any
+): NetworkMonitoringError {
   return {
     code,
     message,
@@ -670,6 +706,421 @@ router.get('/hosts', async (req: Request, res: Response) => {
         'Failed to retrieve host list'
       )
     );
+  }
+});
+
+/**
+ * GET /api/monitoring/network/:hostId
+ * 특정 호스트의 네트워크 연결 정보를 조회합니다.
+ */
+router.get('/network/:hostId', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  const {
+    includeStatistics = 'true',
+    includeFirewall = 'true',
+    limit,
+    offset
+  } = req.query;
+
+  logInfo(`Getting network connections for host: ${hostId}`);
+
+  try {
+    // SSH 호스트 정보 조회
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    // SSH 연결 생성
+    let conn: Client;
+    try {
+      conn = await sshConnectionPool.getConnection(sshConfig);
+    } catch (error) {
+      logError(`SSH connection failed for host ${hostId}`, error);
+      return res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SSH_CONNECTION_FAILED,
+          error instanceof SSHConnectionError ? error.message : 'SSH connection failed',
+          { host: sshConfig.host, port: sshConfig.port }
+        )
+      );
+    }
+
+    try {
+      // 네트워크 정보 수집을 위한 명령어들
+      const commands = [
+        'netstat -tulpn',                        // 네트워크 연결 정보
+        'cat /proc/net/dev',                     // 네트워크 인터페이스 통계
+        'which ss && ss -tulpn || echo "ss not available"', // 현대적 netstat 대안
+      ];
+
+      // 방화벽 상태 확인 명령어 (조건적으로 추가)
+      if (includeFirewall === 'true') {
+        commands.push(
+          'which ufw && ufw status || echo "ufw not available"',
+          'which iptables && iptables -L -n | head -20 || echo "iptables not available"'
+        );
+      }
+
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 15000 }))
+      );
+
+      let connections: NetworkConnection[] = [];
+      let interfaceStats: any[] = [];
+      let firewallStatus: FirewallStatus = { active: false, service: 'unknown' };
+
+      // netstat 출력 파싱
+      if (results[0].status === 'fulfilled' && results[0].value.stdout.trim()) {
+        try {
+          connections = parseNetstatOutput(results[0].value.stdout);
+          logInfo(`Parsed ${connections.length} network connections from netstat`);
+        } catch (error) {
+          logError('Failed to parse netstat output', error);
+        }
+      }
+
+      // 네트워크 인터페이스 통계 파싱
+      if (results[1].status === 'fulfilled' && results[1].value.stdout.trim()) {
+        try {
+          interfaceStats = parseNetworkInterfaceStats(results[1].value.stdout);
+          logInfo(`Parsed ${interfaceStats.length} network interface stats`);
+        } catch (error) {
+          logError('Failed to parse network interface stats', error);
+          interfaceStats = [];
+        }
+      }
+
+      // ss 출력으로 보완 (netstat가 부족한 경우)
+      if (results[2].status === 'fulfilled' && results[2].value.stdout.includes('LISTEN')) {
+        try {
+          const ssConnections = parseSsOutput(results[2].value.stdout);
+          if (ssConnections.length > connections.length) {
+            connections = ssConnections;
+            logInfo(`Used ss output instead, got ${connections.length} connections`);
+          }
+        } catch (error) {
+          logError('Failed to parse ss output', error);
+        }
+      }
+
+      // 방화벽 상태 파싱
+      if (includeFirewall === 'true') {
+        // ufw 상태 확인
+        if (results[3]?.status === 'fulfilled' && results[3].value.stdout.includes('Status:')) {
+          try {
+            firewallStatus = parseUfwStatus(results[3].value.stdout);
+            logInfo(`Parsed ufw firewall status: ${firewallStatus.active ? 'active' : 'inactive'}`);
+          } catch (error) {
+            logError('Failed to parse ufw status', error);
+          }
+        }
+        // iptables 상태 확인 (ufw가 없는 경우)
+        else if (results[4]?.status === 'fulfilled' && results[4].value.stdout.includes('Chain')) {
+          try {
+            firewallStatus = parseIptablesStatus(results[4].value.stdout);
+            logInfo(`Parsed iptables firewall status: ${firewallStatus.active ? 'active' : 'inactive'}`);
+          } catch (error) {
+            logError('Failed to parse iptables status', error);
+          }
+        }
+      }
+
+      // 리스닝 포트 추출
+      const listeningPorts = extractListeningPorts(connections);
+
+      // 네트워크 통계 계산
+      let statistics: NetworkStatistics | undefined;
+      if (includeStatistics === 'true') {
+        statistics = calculateNetworkStatistics(connections, interfaceStats);
+      }
+
+      // 페이지네이션 적용
+      let paginatedConnections = connections;
+      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+      const offsetNum = offset ? parseInt(offset as string, 10) : undefined;
+      
+      if (limitNum !== undefined || offsetNum !== undefined) {
+        const start = offsetNum || 0;
+        const end = limitNum ? start + limitNum : undefined;
+        paginatedConnections = connections.slice(start, end);
+      }
+
+      // 응답 생성
+      const response: NetworkMonitoringResponse = {
+        connections: paginatedConnections,
+        listeningPorts,
+        statistics: statistics || {
+          totalConnections: 0,
+          connectionsByProtocol: { tcp: 0, udp: 0, tcp6: 0, udp6: 0 },
+          connectionsByState: {} as any,
+          listeningPorts: 0,
+          interfaceStats: []
+        },
+        firewallStatus,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      };
+
+      logInfo(`Successfully retrieved network info for host ${hostId}: ${paginatedConnections.length} connections, ${listeningPorts.length} listening ports`);
+      res.json(response);
+
+    } finally {
+      // 연결 반환
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting network info for host ${hostId}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command, exitCode: error.exitCode, stderr: error.stderr }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SYSTEM_ERROR,
+          'Internal server error',
+          { error: error instanceof Error ? error.message : String(error) }
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/network/:hostId/ports
+ * 특정 호스트의 리스닝 포트만 조회합니다.
+ */
+router.get('/network/:hostId/ports', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  
+  logInfo(`Getting listening ports for host: ${hostId}`);
+
+  try {
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      // 리스닝 포트만 조회 (더 빠른 명령어 사용)
+      const command = 'netstat -tuln';
+      const result = await executeSSHCommand(conn, command, { timeout: 10000 });
+      
+      const connections = parseNetstatOutput(result.stdout);
+      const listeningPorts = extractListeningPorts(connections);
+
+      logInfo(`Successfully retrieved ${listeningPorts.length} listening ports for host ${hostId}`);
+      res.json({
+        listeningPorts,
+        count: listeningPorts.length,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting listening ports for host ${hostId}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/network/:hostId/statistics
+ * 특정 호스트의 네트워크 통계만 조회합니다.
+ */
+router.get('/network/:hostId/statistics', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  
+  logInfo(`Getting network statistics for host: ${hostId}`);
+
+  try {
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      const commands = [
+        'netstat -tuln',              // 연결 정보
+        'cat /proc/net/dev'          // 인터페이스 통계
+      ];
+
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 10000 }))
+      );
+
+      let connections: NetworkConnection[] = [];
+      let interfaceStats: any[] = [];
+
+      if (results[0].status === 'fulfilled') {
+        connections = parseNetstatOutput(results[0].value.stdout);
+      }
+
+      if (results[1].status === 'fulfilled') {
+        interfaceStats = parseNetworkInterfaceStats(results[1].value.stdout);
+      }
+
+      const statistics = calculateNetworkStatistics(connections, interfaceStats);
+
+      logInfo(`Successfully calculated network statistics for host ${hostId}`);
+      res.json({
+        statistics,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting network statistics for host ${hostId}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/network/:hostId/firewall
+ * 특정 호스트의 방화벽 상태를 조회합니다.
+ */
+router.get('/network/:hostId/firewall', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  
+  logInfo(`Getting firewall status for host: ${hostId}`);
+
+  try {
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      const commands = [
+        'which ufw && ufw status || echo "ufw not available"',
+        'which iptables && iptables -L -n | head -10 || echo "iptables not available"',
+        'which firewalld && firewall-cmd --state || echo "firewalld not available"'
+      ];
+
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 10000 }))
+      );
+
+      let firewallStatus: FirewallStatus = { active: false, service: 'unknown' };
+
+      // ufw 상태 확인
+      if (results[0].status === 'fulfilled' && results[0].value.stdout.includes('Status:')) {
+        firewallStatus = parseUfwStatus(results[0].value.stdout);
+      }
+      // iptables 상태 확인
+      else if (results[1].status === 'fulfilled' && results[1].value.stdout.includes('Chain')) {
+        firewallStatus = parseIptablesStatus(results[1].value.stdout);
+      }
+      // firewalld 상태 확인
+      else if (results[2].status === 'fulfilled' && results[2].value.stdout.includes('running')) {
+        firewallStatus = {
+          active: true,
+          service: 'firewalld'
+        };
+      }
+
+      logInfo(`Successfully retrieved firewall status for host ${hostId}: ${firewallStatus.service} (${firewallStatus.active ? 'active' : 'inactive'})`);
+      res.json({
+        firewallStatus,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting firewall status for host ${hostId}`, error);
+    
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createNetworkErrorResponse(
+          NetworkErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
   }
 });
 

@@ -9,8 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Network, Wifi, Shield, Activity, RefreshCw, Globe, Lock, Unlock } from "lucide-react";
-import { getServerStatusById } from "@/ui/main-axios.ts";
+import { getServerStatusById, getMonitoringHosts, monitoringApi } from "@/ui/main-axios.ts";
 import { useTranslation } from 'react-i18next';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
+import { HostInfo } from "@/types/process-monitoring";
 
 interface NetworkConnection {
     protocol: string;
@@ -87,36 +89,40 @@ interface NetworkMonitorProps {
     embedded?: boolean;
 }
 
-async function getNetworkInfo(hostId: number): Promise<NetworkMonitoringResponse> {
-    const response = await fetch(`/api/monitoring/network/${hostId}`);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch network info: ${response.status} ${response.statusText}`);
+async function getNetworkInfo(hostId: string): Promise<NetworkMonitoringResponse> {
+    try {
+        const response = await monitoringApi.get(`/network/${hostId}`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(`Failed to fetch network info: ${error.response?.status || 'Unknown'} ${error.response?.statusText || error.message}`);
     }
-    return response.json();
 }
 
-async function getListeningPorts(hostId: number): Promise<{ listeningPorts: ListeningPort[]; count: number; timestamp: string; hostname: string }> {
-    const response = await fetch(`/api/monitoring/network/${hostId}/ports`);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch listening ports: ${response.status} ${response.statusText}`);
+async function getListeningPorts(hostId: string): Promise<{ listeningPorts: ListeningPort[]; count: number; timestamp: string; hostname: string }> {
+    try {
+        const response = await monitoringApi.get(`/network/${hostId}/ports`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(`Failed to fetch listening ports: ${error.response?.status || 'Unknown'} ${error.response?.statusText || error.message}`);
     }
-    return response.json();
 }
 
-async function getNetworkStatistics(hostId: number): Promise<{ statistics: NetworkStatistics; timestamp: string; hostname: string }> {
-    const response = await fetch(`/api/monitoring/network/${hostId}/statistics`);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch network statistics: ${response.status} ${response.statusText}`);
+async function getNetworkStatistics(hostId: string): Promise<{ statistics: NetworkStatistics; timestamp: string; hostname: string }> {
+    try {
+        const response = await monitoringApi.get(`/network/${hostId}/statistics`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(`Failed to fetch network statistics: ${error.response?.status || 'Unknown'} ${error.response?.statusText || error.message}`);
     }
-    return response.json();
 }
 
-async function getFirewallStatus(hostId: number): Promise<{ firewallStatus: FirewallStatus; timestamp: string; hostname: string }> {
-    const response = await fetch(`/api/monitoring/network/${hostId}/firewall`);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch firewall status: ${response.status} ${response.statusText}`);
+async function getFirewallStatus(hostId: string): Promise<{ firewallStatus: FirewallStatus; timestamp: string; hostname: string }> {
+    try {
+        const response = await monitoringApi.get(`/network/${hostId}/firewall`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(`Failed to fetch firewall status: ${error.response?.status || 'Unknown'} ${error.response?.statusText || error.message}`);
     }
-    return response.json();
 }
 
 export function NetworkMonitor({
@@ -128,65 +134,42 @@ export function NetworkMonitor({
 }: NetworkMonitorProps): React.ReactElement {
     const { t } = useTranslation();
     const { state: sidebarState } = useSidebar();
+    const [hosts, setHosts] = React.useState<HostInfo[]>([]);
+    const [selectedHostId, setSelectedHostId] = React.useState<string>('');
     const [serverStatus, setServerStatus] = React.useState<'online' | 'offline'>('offline');
     const [networkData, setNetworkData] = React.useState<NetworkMonitoringResponse | null>(null);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
-    const [currentHostConfig, setCurrentHostConfig] = React.useState(hostConfig);
     const [autoRefresh, setAutoRefresh] = React.useState(true);
     const [refreshInterval, setRefreshInterval] = React.useState(30000); // 30 seconds
 
+    // Load available hosts on mount
     React.useEffect(() => {
-        setCurrentHostConfig(hostConfig);
-    }, [hostConfig]);
-
-    React.useEffect(() => {
-        const fetchLatestHostConfig = async () => {
-            if (hostConfig?.id) {
-                try {
-                    const { getSSHHosts } = await import('@/ui/main-axios.ts');
-                    const hosts = await getSSHHosts();
-                    const updatedHost = hosts.find(h => h.id === hostConfig.id);
-                    if (updatedHost) {
-                        setCurrentHostConfig(updatedHost);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch updated host config:', error);
+        const loadHosts = async () => {
+            try {
+                const hostList = await getMonitoringHosts();
+                setHosts(hostList);
+                if (hostList.length > 0 && !selectedHostId) {
+                    setSelectedHostId(hostList[0].id.toString());
                 }
+            } catch (error) {
+                console.error('Failed to load hosts:', error);
+                setError('Failed to load available hosts');
             }
         };
-
-        fetchLatestHostConfig();
-
-        const handleHostsChanged = async () => {
-            if (hostConfig?.id) {
-                try {
-                    const { getSSHHosts } = await import('@/ui/main-axios.ts');
-                    const hosts = await getSSHHosts();
-                    const updatedHost = hosts.find(h => h.id === hostConfig.id);
-                    if (updatedHost) {
-                        setCurrentHostConfig(updatedHost);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch updated host config:', error);
-                }
-            }
-        };
-
-        window.addEventListener('ssh-hosts:changed', handleHostsChanged);
-        return () => window.removeEventListener('ssh-hosts:changed', handleHostsChanged);
-    }, [hostConfig?.id]);
+        loadHosts();
+    }, [selectedHostId]);
 
     const fetchNetworkData = React.useCallback(async () => {
-        if (!currentHostConfig?.id) return;
+        if (!selectedHostId) return;
 
         setLoading(true);
         setError(null);
         
         try {
             const [statusRes, networkRes] = await Promise.all([
-                getServerStatusById(currentHostConfig.id),
-                getNetworkInfo(currentHostConfig.id)
+                getServerStatusById(parseInt(selectedHostId)),
+                getNetworkInfo(selectedHostId)
             ]);
             
             setServerStatus(statusRes?.status === 'online' ? 'online' : 'offline');
@@ -198,13 +181,13 @@ export function NetworkMonitor({
         } finally {
             setLoading(false);
         }
-    }, [currentHostConfig?.id]);
+    }, [selectedHostId]);
 
     React.useEffect(() => {
         let cancelled = false;
         let intervalId: number | undefined;
 
-        if (currentHostConfig?.id && isVisible) {
+        if (selectedHostId && isVisible) {
             fetchNetworkData();
             
             if (autoRefresh) {
@@ -220,7 +203,11 @@ export function NetworkMonitor({
             cancelled = true;
             if (intervalId) window.clearInterval(intervalId);
         };
-    }, [currentHostConfig?.id, isVisible, autoRefresh, refreshInterval, fetchNetworkData]);
+    }, [selectedHostId, isVisible, autoRefresh, refreshInterval, fetchNetworkData]);
+
+    const selectedHost = React.useMemo(() => {
+        return hosts.find(host => host.id.toString() === selectedHostId);
+    }, [hosts, selectedHostId]);
 
     const topMarginPx = isTopbarOpen ? 74 : 16;
     const leftMarginPx = sidebarState === 'collapsed' ? 16 : 8;
@@ -284,11 +271,25 @@ export function NetworkMonitor({
                     <div className="flex items-center gap-4">
                         <h1 className="font-bold text-lg flex items-center gap-2">
                             <Network className="w-5 h-5" />
-                            {currentHostConfig?.folder} / {title}
+                            {title}
                         </h1>
-                        <Status status={serverStatus} className="!bg-transparent !p-0.75 flex-shrink-0">
-                            <StatusIndicator />
-                        </Status>
+                        <Select value={selectedHostId} onValueChange={setSelectedHostId}>
+                            <SelectTrigger className="w-[300px]">
+                                <SelectValue placeholder="Select a host to monitor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {hosts.map((host) => (
+                                    <SelectItem key={host.id} value={host.id.toString()}>
+                                        {host.folder || 'Default'} - {host.host}:{host.port} ({host.username})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {selectedHost && (
+                            <Status status={serverStatus} className="!bg-transparent !p-0.75 flex-shrink-0">
+                                <StatusIndicator />
+                            </Status>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
@@ -297,7 +298,7 @@ export function NetworkMonitor({
                             onClick={() => setAutoRefresh(!autoRefresh)}
                             className={autoRefresh ? 'bg-green-500/10 border-green-500' : ''}
                         >
-                            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh && !loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh && loading ? 'animate-spin' : ''}`} />
                             Auto Refresh
                         </Button>
                         <Button
@@ -323,7 +324,7 @@ export function NetworkMonitor({
                         </Card>
                     )}
 
-                    {!currentHostConfig?.id ? (
+                    {!selectedHostId ? (
                         <Card>
                             <CardHeader>
                                 <CardTitle>No Host Selected</CardTitle>

@@ -123,7 +123,10 @@ router.get('/:hostId', async (req: Request, res: Response) => {
   const limit = parseInt((req.query.limit as string) || '200', 10);
 
   const sshConfig = await getSSHHostInfo(hostId);
-  if (!sshConfig) return res.status(404).json({ error: 'SSH host not found' });
+  if (!sshConfig) {
+    // Graceful empty response to prevent front-end XHR error noise
+    return res.json({ path: basePath, count: 0, files: [], warning: 'SSH host not found' });
+  }
 
   let conn: Client | undefined;
   try {
@@ -136,7 +139,8 @@ router.get('/:hostId', async (req: Request, res: Response) => {
     const files = parseFindStatOutput(result.stdout);
     res.json({ path: basePath, count: files.length, files });
   } catch (error) {
-    handleSshError(res, error);
+    // Graceful empty response on SSH/command failure (avoid 500 in console)
+    res.json({ path: basePath, count: 0, files: [], warning: error instanceof Error ? error.message : String(error) });
   } finally {
     if (sshConfig) sshConnectionPool.releaseConnection(sshConfig);
   }
@@ -155,7 +159,9 @@ router.post('/:hostId/search', async (req: Request, res: Response) => {
   }
 
   const sshConfig = await getSSHHostInfo(hostId);
-  if (!sshConfig) return res.status(404).json({ error: 'SSH host not found' });
+  if (!sshConfig) {
+    return res.json({ count: 0, matches: [], warning: 'SSH host not found' });
+  }
 
   let conn: Client | undefined;
   try {
@@ -177,7 +183,7 @@ router.post('/:hostId/search', async (req: Request, res: Response) => {
     const matches = parseGrepOutput(result.stdout);
     res.json({ count: matches.length, matches });
   } catch (error) {
-    handleSshError(res, error);
+    res.json({ count: 0, matches: [], warning: error instanceof Error ? error.message : String(error) });
   } finally {
     if (sshConfig) sshConnectionPool.releaseConnection(sshConfig);
   }

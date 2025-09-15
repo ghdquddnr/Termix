@@ -264,8 +264,9 @@ export async function listLogFiles(hostId: number, opts?: { path?: string; maxDe
         if (opts?.limit) params.set('limit', String(opts.limit));
         const res = await logsApi.get(`/${hostId}?${params.toString()}`);
         return res.data?.files || [];
-    } catch (error) {
-        handleApiError(error, 'list log files');
+    } catch (_error) {
+        // Return empty list on failure to avoid crashing UI
+        return [];
     }
 }
 
@@ -273,8 +274,9 @@ export async function searchLogs(hostId: number, payload: { query: string; path?
     try {
         const res = await logsApi.post(`/${hostId}/search`, payload);
         return res.data?.matches || [];
-    } catch (error) {
-        handleApiError(error, 'search logs');
+    } catch (_error) {
+        // Return empty on failure
+        return [];
     }
 }
 

@@ -252,6 +252,9 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         const isAdmin = tab.type === 'admin';
                         const isThemeSettings = tab.type === 'theme_settings';
                         const isDiskMonitor = tab.type === 'disk_monitor';
+                        const isProcessMonitor = tab.type === 'process_monitor';
+                        const isServiceManager = tab.type === 'service_manager';
+                        const isNetworkMonitor = tab.type === 'network_monitor';
                         const isSplittable = isTerminal || isServer || isFileManager;
                         const isSplitButtonDisabled = (isActive && !isSplitScreenActive) || ((allSplitScreenTab?.length || 0) >= 3 && !isSplit);
                         const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin || currentTabIsThemeSettings;
@@ -264,10 +267,32 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                 title={tab.title}
                                 isActive={isActive}
                                 onActivate={() => handleTabActivate(tab.id)}
-                                onClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings || isDiskMonitor ? () => handleTabClose(tab.id) : undefined}
+                                onClose={(
+                                    isTerminal ||
+                                    isServer ||
+                                    isFileManager ||
+                                    isSshManager ||
+                                    isAdmin ||
+                                    isThemeSettings ||
+                                    isDiskMonitor ||
+                                    isProcessMonitor ||
+                                    isServiceManager ||
+                                    isNetworkMonitor
+                                ) ? () => handleTabClose(tab.id) : undefined}
                                 onSplit={isSplittable ? () => handleTabSplit(tab.id) : undefined}
                                 canSplit={isSplittable}
-                                canClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings || isDiskMonitor}
+                                canClose={
+                                    isTerminal ||
+                                    isServer ||
+                                    isFileManager ||
+                                    isSshManager ||
+                                    isAdmin ||
+                                    isThemeSettings ||
+                                    isDiskMonitor ||
+                                    isProcessMonitor ||
+                                    isServiceManager ||
+                                    isNetworkMonitor
+                                }
                                 disableActivate={disableActivate}
                                 disableSplit={disableSplit}
                                 disableClose={disableClose}

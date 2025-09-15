@@ -8,7 +8,11 @@ import {
     X,
     Terminal as TerminalIcon,
     Server as ServerIcon,
-    Folder as FolderIcon
+    Folder as FolderIcon,
+    Activity,
+    Cog,
+    Network,
+    HardDrive,
 } from "lucide-react";
 
 interface TabProps {
@@ -111,6 +115,110 @@ export function Tab({
                 >
                     <X/>
                 </Button>
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "process_monitor") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <Activity className="mr-1 h-4 w-4" />
+                    {title || '프로세스 모니터링'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "service_manager") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <Cog className="mr-1 h-4 w-4" />
+                    {title || '서비스 관리'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "network_monitor") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <Network className="mr-1 h-4 w-4" />
+                    {title || '네트워크 모니터링'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "disk_monitor") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <HardDrive className="mr-1 h-4 w-4" />
+                    {title || '디스크 모니터링'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
             </ButtonGroup>
         );
     }

@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ProcessMonitor } from "@/components/process/ProcessMonitor";
 import { ServiceManager } from "@/ui/Apps/Service Manager/ServiceManager";
 import { NetworkMonitor } from "@/ui/Apps/Network Monitor/NetworkMonitor";
+import { DiskMonitor } from "@/ui/Apps/Disk Monitor/DiskMonitor";
 
 function getCookie(name: string) {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -97,6 +98,7 @@ function AppContent() {
     const showProcessMonitor = currentTabData?.type === 'process_monitor';
     const showServiceManager = currentTabData?.type === 'service_manager';
     const showNetworkMonitor = currentTabData?.type === 'network_monitor';
+    const showDiskMonitor = currentTabData?.type === 'disk_monitor';
 
     return (
         <div>
@@ -270,6 +272,20 @@ function AppContent() {
                         }}
                     >
                         <NetworkMonitor title="네트워크 모니터링" isTopbarOpen={isTopbarOpen} />
+                    </div>
+
+                    <div
+                        className="h-screen w-full"
+                        style={{
+                            visibility: showDiskMonitor ? "visible" : "hidden",
+                            pointerEvents: showDiskMonitor ? "auto" : "none",
+                            height: showDiskMonitor ? "100vh" : 0,
+                            width: showDiskMonitor ? "100%" : 0,
+                            position: showDiskMonitor ? "static" : "absolute",
+                            overflow: "auto",
+                        }}
+                    >
+                        <DiskMonitor title="디스크 모니터링" isTopbarOpen={isTopbarOpen} />
                     </div>
 
                     <TopNavbar isTopbarOpen={isTopbarOpen} setIsTopbarOpen={setIsTopbarOpen}/>

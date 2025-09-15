@@ -286,6 +286,13 @@ export function DiskMonitor({
         return 'default';
     };
 
+    // Color palette for treemap blocks (avoid relying on undefined `colors` prop)
+    const treemapColors = [
+        '#8884d8', '#82ca9d', '#ffc658', '#ff8042',
+        '#a78bfa', '#34d399', '#f59e0b', '#ef4444',
+        '#60a5fa', '#f472b6', '#22c55e', '#eab308'
+    ];
+
     // Prepare data for charts
     const filesystemChartData = React.useMemo(() => {
         if (!diskData?.filesystems) return [];
@@ -784,9 +791,9 @@ export function DiskMonitor({
                                                                     aspectRatio={4/3}
                                                                     stroke="#fff"
                                                                     fill="#8884d8"
-                                                                    content={({ root, depth, x, y, width, height, index, payload, colors, rank, name }) => {
+                                                                    content={({ depth, x, y, width, height, index, payload, name }) => {
                                                                         if (depth === 1) {
-                                                                            const color = colors[Math.floor(index % colors.length)];
+                                                                            const color = treemapColors[index % treemapColors.length];
                                                                             return (
                                                                                 <g>
                                                                                     <rect

@@ -114,6 +114,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
 
         if (allSplitScreenTab.length === 0 && mainTab) {
             const isFileManagerTab = mainTab.type === 'file_manager';
+            const forceVisible = mainTab.type === 'log_viewer';
             styles[mainTab.id] = {
                 position: 'absolute',
                 top: isFileManagerTab ? 0 : 2,
@@ -123,7 +124,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                 zIndex: 20,
                 display: 'block',
                 pointerEvents: 'auto',
-                opacity: ready ? 1 : 0
+                opacity: forceVisible ? 1 : (ready ? 1 : 0)
             };
         } else {
             layoutTabs.forEach((t: any) => {

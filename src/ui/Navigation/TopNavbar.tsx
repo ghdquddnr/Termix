@@ -255,6 +255,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         const isProcessMonitor = tab.type === 'process_monitor';
                         const isServiceManager = tab.type === 'service_manager';
                         const isNetworkMonitor = tab.type === 'network_monitor';
+                        const isLogViewer = tab.type === 'log_viewer';
                         const isSplittable = isTerminal || isServer || isFileManager;
                         const isSplitButtonDisabled = (isActive && !isSplitScreenActive) || ((allSplitScreenTab?.length || 0) >= 3 && !isSplit);
                         const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin || currentTabIsThemeSettings;
@@ -277,7 +278,8 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                     isDiskMonitor ||
                                     isProcessMonitor ||
                                     isServiceManager ||
-                                    isNetworkMonitor
+                                    isNetworkMonitor ||
+                                    isLogViewer
                                 ) ? () => handleTabClose(tab.id) : undefined}
                                 onSplit={isSplittable ? () => handleTabSplit(tab.id) : undefined}
                                 canSplit={isSplittable}
@@ -291,7 +293,8 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                     isDiskMonitor ||
                                     isProcessMonitor ||
                                     isServiceManager ||
-                                    isNetworkMonitor
+                                    isNetworkMonitor ||
+                                    isLogViewer
                                 }
                                 disableActivate={disableActivate}
                                 disableSplit={disableSplit}

@@ -178,6 +178,17 @@ export function LeftSidebar({
         setCurrentTab(id);
     };
 
+    const openLogViewerTab = () => {
+        if (isSplitScreenActive) return;
+        const logViewerTab = tabList.find((t: any) => t.type === 'log_viewer');
+        if (logViewerTab) {
+            setCurrentTab(logViewerTab.id);
+            return;
+        }
+        const id = addTab({ type: 'log_viewer', title: '로그 뷰어' } as any);
+        setCurrentTab(id);
+    };
+
     const [hosts, setHosts] = useState<SSHHost[]>([]);
     const [hostsLoading, setHostsLoading] = useState(false);
     const [hostsError, setHostsError] = useState<string | null>(null);
@@ -367,6 +378,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <HardDrive strokeWidth="2.5"/>
                                 디스크 모니터링
+                            </Button>
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                                    onClick={openLogViewerTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <File strokeWidth="2.5"/>
+                                로그 뷰어
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

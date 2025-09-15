@@ -6,6 +6,7 @@ import {ProcessMonitor} from "@/components/process/ProcessMonitor.tsx";
 import {ServiceManager} from "@/ui/Apps/Service Manager/ServiceManager.tsx";
 import {NetworkMonitor} from "@/ui/Apps/Network Monitor/NetworkMonitor.tsx";
 import {DiskMonitor} from "@/ui/Apps/Disk Monitor/DiskMonitor.tsx";
+import LogsApp from "@/ui/Apps/Logs/LogsApp.tsx";
 import {useTabs} from "@/ui/Navigation/Tabs/TabContext.tsx";
 import {ResizablePanelGroup, ResizablePanel, ResizableHandle} from '@/components/ui/resizable.tsx';
 import * as ResizablePrimitive from "react-resizable-panels";
@@ -21,7 +22,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     const {tabs, currentTab, allSplitScreenTab} = useTabs() as any;
     const {state: sidebarState} = useSidebar();
 
-    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor' || tab.type === 'disk_monitor');
+    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor' || tab.type === 'disk_monitor' || tab.type === 'log_viewer');
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -203,6 +204,8 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                                         isTopbarOpen={isTopbarOpen}
                                         embedded={true}
                                     />
+                                ) : t.type === 'log_viewer' ? (
+                                    <LogsApp />
                                 ) : null}
                             </div>
                         </div>

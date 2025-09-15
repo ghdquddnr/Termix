@@ -13,6 +13,7 @@ import {
     Cog,
     Network,
     HardDrive,
+    File as FileIcon,
 } from "lucide-react";
 
 interface TabProps {
@@ -208,6 +209,32 @@ export function Tab({
                 >
                     <HardDrive className="mr-1 h-4 w-4" />
                     {title || '디스크 모니터링'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "log_viewer") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <FileIcon className="mr-1 h-4 w-4" />
+                    {title || '로그 뷰어'}
                 </Button>
                 {canClose && (
                     <Button

@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 
 export interface Tab {
     id: number;
-    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager' | 'theme_settings' | 'process_monitor';
+    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager' | 'theme_settings' | 'process_monitor' | 'service_manager' | 'network_monitor';
     title: string;
     hostConfig?: any;
     terminalRef?: React.RefObject<any>;
@@ -46,7 +46,9 @@ export function TabProvider({children}: TabProviderProps) {
     function computeUniqueTitle(tabType: Tab['type'], desiredTitle: string | undefined): string {
         const defaultTitle = tabType === 'server' ? t('nav.serverStats') : 
                           (tabType === 'file_manager' ? t('nav.fileManager') : 
-                          (tabType === 'process_monitor' ? '프로세스 모니터링' : t('nav.terminal')));
+                          (tabType === 'process_monitor' ? '프로세스 모니터링' : 
+                          (tabType === 'service_manager' ? '서비스 관리' :
+                          (tabType === 'network_monitor' ? '네트워크 모니터링' : t('nav.terminal')))));
         const baseTitle = (desiredTitle || defaultTitle).trim();
         const match = baseTitle.match(/^(.*) \((\d+)\)$/);
         const root = match ? match[1] : baseTitle;

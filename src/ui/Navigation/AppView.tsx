@@ -4,6 +4,7 @@ import {Server as ServerView} from "@/ui/Apps/Server/Server.tsx";
 import {FileManager} from "@/ui/Apps/File Manager/FileManager.tsx";
 import {ProcessMonitor} from "@/components/process/ProcessMonitor.tsx";
 import {ServiceManager} from "@/ui/Apps/Service Manager/ServiceManager.tsx";
+import {NetworkMonitor} from "@/ui/Apps/Network Monitor/NetworkMonitor.tsx";
 import {useTabs} from "@/ui/Navigation/Tabs/TabContext.tsx";
 import {ResizablePanelGroup, ResizablePanel, ResizableHandle} from '@/components/ui/resizable.tsx';
 import * as ResizablePrimitive from "react-resizable-panels";
@@ -19,7 +20,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     const {tabs, currentTab, allSplitScreenTab} = useTabs() as any;
     const {state: sidebarState} = useSidebar();
 
-    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager');
+    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor');
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -188,6 +189,12 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                                     <ServiceManager
                                         onSelectView={() => {}}
                                         isTopbarOpen={isTopbarOpen}
+                                    />
+                                ) : t.type === 'network_monitor' ? (
+                                    <NetworkMonitor
+                                        title="네트워크 모니터링"
+                                        isTopbarOpen={isTopbarOpen}
+                                        embedded={true}
                                     />
                                 ) : null}
                             </div>

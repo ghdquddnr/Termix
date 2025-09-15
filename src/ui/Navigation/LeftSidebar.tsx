@@ -3,7 +3,7 @@ import {
     Computer,
     Server,
     File,
-    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity, Cog
+    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity, Cog, Network
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -156,6 +156,17 @@ export function LeftSidebar({
         setCurrentTab(id);
     };
 
+    const networkMonitorTab = tabList.find((t) => t.type === 'network_monitor');
+    const openNetworkMonitorTab = () => {
+        if (isSplitScreenActive) return;
+        if (networkMonitorTab) {
+            setCurrentTab(networkMonitorTab.id);
+            return;
+        }
+        const id = addTab({type: 'network_monitor', title: '네트워크 모니터링'} as any);
+        setCurrentTab(id);
+    };
+
     const [hosts, setHosts] = useState<SSHHost[]>([]);
     const [hostsLoading, setHostsLoading] = useState(false);
     const [hostsError, setHostsError] = useState<string | null>(null);
@@ -302,7 +313,7 @@ export function LeftSidebar({
                 <Sidebar variant="floating" className="">
                     <SidebarHeader>
                         <SidebarGroupLabel className="text-lg font-bold text-sidebar-foreground">
-                            Termix
+                            SolTerm
                             <Button
                                 variant="outline"
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -333,6 +344,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Cog strokeWidth="2.5"/>
                                 서비스 관리
+                            </Button>
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                                    onClick={openNetworkMonitorTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <Network strokeWidth="2.5"/>
+                                네트워크 모니터링
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

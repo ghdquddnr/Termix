@@ -13,6 +13,7 @@ import { ThemeSettings } from "@/components/theme/ThemeSettings";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProcessMonitor } from "@/components/process/ProcessMonitor";
 import { ServiceManager } from "@/ui/Apps/Service Manager/ServiceManager";
+import { NetworkMonitor } from "@/ui/Apps/Network Monitor/NetworkMonitor";
 
 function getCookie(name: string) {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -95,6 +96,7 @@ function AppContent() {
     const showThemeSettings = currentTabData?.type === 'theme_settings';
     const showProcessMonitor = currentTabData?.type === 'process_monitor';
     const showServiceManager = currentTabData?.type === 'service_manager';
+    const showNetworkMonitor = currentTabData?.type === 'network_monitor';
 
     return (
         <div>
@@ -254,6 +256,20 @@ function AppContent() {
                         }}
                     >
                         <ServiceManager onSelectView={handleSelectView} isTopbarOpen={isTopbarOpen} />
+                    </div>
+
+                    <div
+                        className="h-screen w-full"
+                        style={{
+                            visibility: showNetworkMonitor ? "visible" : "hidden",
+                            pointerEvents: showNetworkMonitor ? "auto" : "none",
+                            height: showNetworkMonitor ? "100vh" : 0,
+                            width: showNetworkMonitor ? "100%" : 0,
+                            position: showNetworkMonitor ? "static" : "absolute",
+                            overflow: "auto",
+                        }}
+                    >
+                        <NetworkMonitor title="네트워크 모니터링" isTopbarOpen={isTopbarOpen} />
                     </div>
 
                     <TopNavbar isTopbarOpen={isTopbarOpen} setIsTopbarOpen={setIsTopbarOpen}/>

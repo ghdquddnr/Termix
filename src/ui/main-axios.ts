@@ -234,6 +234,98 @@ export const monitoringApi = createApiInstance(
     isDev ? 'http://localhost:8081/monitoring' : '/monitoring'
 );
 
+// Logs API (port 8081) - logs listing, search, bookmarks
+export const logsApi = createApiInstance(
+    isDev ? 'http://localhost:8081/logs' : '/logs'
+);
+
+// ============================================================================
+// LOGS MANAGEMENT
+// ============================================================================
+
+export type LogFileInfo = {
+    path: string;
+    sizeBytes: number;
+    modifiedAt: string;
+    name: string;
+};
+
+export type LogSearchMatch = {
+    file: string;
+    line: number;
+    text: string;
+};
+
+export async function listLogFiles(hostId: number, opts?: { path?: string; maxDepth?: number; limit?: number; }): Promise<LogFileInfo[]> {
+    try {
+        const params = new URLSearchParams();
+        if (opts?.path) params.set('path', opts.path);
+        if (opts?.maxDepth) params.set('maxDepth', String(opts.maxDepth));
+        if (opts?.limit) params.set('limit', String(opts.limit));
+        const res = await logsApi.get(`/${hostId}?${params.toString()}`);
+        return res.data?.files || [];
+    } catch (error) {
+        handleApiError(error, 'list log files');
+    }
+}
+
+export async function searchLogs(hostId: number, payload: { query: string; path?: string; files?: string[]; levels?: string[]; limit?: number; }): Promise<LogSearchMatch[]> {
+    try {
+        const res = await logsApi.post(`/${hostId}/search`, payload);
+        return res.data?.matches || [];
+    } catch (error) {
+        handleApiError(error, 'search logs');
+    }
+}
+
+export async function downloadLog(hostId: number, file: string, compress = false): Promise<Blob> {
+    try {
+        const res = await logsApi.get(`/${hostId}/download`, {
+            params: { file, compress: compress ? 1 : 0 },
+            responseType: 'blob'
+        });
+        return res.data as Blob;
+    } catch (error) {
+        handleApiError(error, 'download log');
+    }
+}
+
+export type LogBookmark = {
+    id: number;
+    userId: string;
+    hostId: number;
+    file: string;
+    note?: string;
+    createdAt: string;
+};
+
+export async function getLogBookmarks(hostId?: number): Promise<LogBookmark[]> {
+    try {
+        const params = new URLSearchParams();
+        if (hostId) params.set('hostId', String(hostId));
+        const res = await logsApi.get(`/bookmarks?${params.toString()}`);
+        return res.data || [];
+    } catch (error) {
+        handleApiError(error, 'fetch bookmarks');
+    }
+}
+
+export async function addLogBookmark(hostId: number, file: string, note?: string): Promise<void> {
+    try {
+        await logsApi.post('/bookmarks', { hostId, file, note });
+    } catch (error) {
+        handleApiError(error, 'add bookmark');
+    }
+}
+
+export async function deleteLogBookmark(id: number): Promise<void> {
+    try {
+        await logsApi.delete(`/bookmarks/${id}`);
+    } catch (error) {
+        handleApiError(error, 'delete bookmark');
+    }
+}
+
 // ============================================================================
 // ERROR HANDLING
 // ============================================================================

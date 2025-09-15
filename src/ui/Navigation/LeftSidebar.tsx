@@ -167,6 +167,17 @@ export function LeftSidebar({
         setCurrentTab(id);
     };
 
+    const diskMonitorTab = tabList.find((t) => t.type === 'disk_monitor');
+    const openDiskMonitorTab = () => {
+        if (isSplitScreenActive) return;
+        if (diskMonitorTab) {
+            setCurrentTab(diskMonitorTab.id);
+            return;
+        }
+        const id = addTab({type: 'disk_monitor', title: '디스크 모니터링'} as any);
+        setCurrentTab(id);
+    };
+
     const [hosts, setHosts] = useState<SSHHost[]>([]);
     const [hostsLoading, setHostsLoading] = useState(false);
     const [hostsError, setHostsError] = useState<string | null>(null);
@@ -350,6 +361,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Network strokeWidth="2.5"/>
                                 네트워크 모니터링
+                            </Button>
+                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                                    onClick={openDiskMonitorTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <HardDrive strokeWidth="2.5"/>
+                                디스크 모니터링
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

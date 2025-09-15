@@ -251,6 +251,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         const isSshManager = tab.type === 'ssh_manager';
                         const isAdmin = tab.type === 'admin';
                         const isThemeSettings = tab.type === 'theme_settings';
+                        const isDiskMonitor = tab.type === 'disk_monitor';
                         const isSplittable = isTerminal || isServer || isFileManager;
                         const isSplitButtonDisabled = (isActive && !isSplitScreenActive) || ((allSplitScreenTab?.length || 0) >= 3 && !isSplit);
                         const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin || currentTabIsThemeSettings;
@@ -263,10 +264,10 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                 title={tab.title}
                                 isActive={isActive}
                                 onActivate={() => handleTabActivate(tab.id)}
-                                onClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings ? () => handleTabClose(tab.id) : undefined}
+                                onClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings || isDiskMonitor ? () => handleTabClose(tab.id) : undefined}
                                 onSplit={isSplittable ? () => handleTabSplit(tab.id) : undefined}
                                 canSplit={isSplittable}
-                                canClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings}
+                                canClose={isTerminal || isServer || isFileManager || isSshManager || isAdmin || isThemeSettings || isDiskMonitor}
                                 disableActivate={disableActivate}
                                 disableSplit={disableSplit}
                                 disableClose={disableClose}
@@ -461,7 +462,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                 <p className="pt-2 pb-2 text-sm text-gray-500">
                                     {t('sshTools.shareIdeas')}{" "}
                                     <a
-                                        href="https://github.com/LukeGus/Termix/issues/new"
+                                        href="https://github.com/LukeGus/SolTerm/issues/new"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-500 hover:underline"

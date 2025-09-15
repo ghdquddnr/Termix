@@ -67,6 +67,51 @@ function authenticateJWT(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// ---------- Bookmarks (declare before parameterized routes) ----------
+
+// GET /logs/bookmarks?hostId=...
+router.get('/bookmarks', authenticateJWT, async (req: Request, res: Response) => {
+  const userId = (extractUserId(req) || '') as string;
+  const hostId = req.query.hostId ? parseInt(String(req.query.hostId), 10) : undefined;
+  try {
+    const rows = await db
+      .select()
+      .from(logBookmarks)
+      .where(hostId ? eq(logBookmarks.hostId, hostId) : undefined as any);
+    const filtered = rows.filter(r => r.userId === userId);
+    res.json(filtered);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch bookmarks' });
+  }
+});
+
+// POST /logs/bookmarks
+// body: { hostId: number, file: string, note?: string }
+router.post('/bookmarks', authenticateJWT, async (req: Request, res: Response) => {
+  const userId = extractUserId(req);
+  const { hostId, file, note } = req.body || {};
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  if (!hostId || !file) return res.status(400).json({ error: 'hostId and file are required' });
+  try {
+    await db.insert(logBookmarks).values({ userId, hostId, file, note });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save bookmark' });
+  }
+});
+
+// DELETE /logs/bookmarks/:id
+router.delete('/bookmarks/:id', authenticateJWT, async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: 'Invalid id' });
+  try {
+    await db.delete(logBookmarks).where(eq(logBookmarks.id, id));
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete bookmark' });
+  }
+});
+
 // ---------- Routes ----------
 
 // GET /logs/:hostId
@@ -202,54 +247,6 @@ function handleSshError(res: Response, error: unknown) {
   return res.status(500).json({ error: 'Internal server error' });
 }
 
-export default router;
-
-// ---------- Bookmarks ----------
-
-// GET /logs/bookmarks?hostId=...
-router.get('/bookmarks', authenticateJWT, async (req: Request, res: Response) => {
-  const userId = (extractUserId(req) || '') as string;
-  const hostId = req.query.hostId ? parseInt(String(req.query.hostId), 10) : undefined;
-  try {
-    const rows = await db
-      .select()
-      .from(logBookmarks)
-      .where(hostId ? eq(logBookmarks.hostId, hostId) : undefined as any);
-    const filtered = rows.filter(r => r.userId === userId);
-    res.json(filtered);
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch bookmarks' });
-  }
-});
-
-// POST /logs/bookmarks
-// body: { hostId: number, file: string, note?: string }
-router.post('/bookmarks', authenticateJWT, async (req: Request, res: Response) => {
-  const userId = extractUserId(req);
-  const { hostId, file, note } = req.body || {};
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-  if (!hostId || !file) return res.status(400).json({ error: 'hostId and file are required' });
-  try {
-    await db.insert(logBookmarks).values({ userId, hostId, file, note });
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to save bookmark' });
-  }
-});
-
-// DELETE /logs/bookmarks/:id
-router.delete('/bookmarks/:id', authenticateJWT, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  if (!id) return res.status(400).json({ error: 'Invalid id' });
-  try {
-    // Basic delete without ownership re-check to keep simple (would add userId match in production)
-    await db.delete(logBookmarks).where(eq(logBookmarks.id, id));
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to delete bookmark' });
-  }
-});
-
 function extractUserId(req: Request): string | undefined {
   const authHeader = req.headers['authorization'];
   if (!authHeader) return undefined;
@@ -262,3 +259,5 @@ function extractUserId(req: Request): string | undefined {
     return undefined;
   }
 }
+
+export default router;

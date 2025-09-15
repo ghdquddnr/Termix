@@ -70,10 +70,10 @@ const alertCache = new AlertCache();
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
 const REPO_OWNER = 'LukeGus';
-const REPO_NAME = 'Termix-Docs';
-const ALERTS_FILE = 'main/termix-alerts.json';
+const REPO_NAME = 'SolTerm-Docs';
+const ALERTS_FILE = 'main/solterm-alerts.json';
 
-interface TermixAlert {
+interface SolTermAlert {
     id: string;
     title: string;
     message: string;
@@ -84,8 +84,8 @@ interface TermixAlert {
     actionText?: string;
 }
 
-async function fetchAlertsFromGitHub(): Promise<TermixAlert[]> {
-    const cacheKey = 'termix_alerts';
+async function fetchAlertsFromGitHub(): Promise<SolTermAlert[]> {
+    const cacheKey = 'solterm_alerts';
     const cachedData = alertCache.get(cacheKey);
     if (cachedData) {
         return cachedData;
@@ -97,7 +97,7 @@ async function fetchAlertsFromGitHub(): Promise<TermixAlert[]> {
         const response = await fetch(url, {
             headers: {
                 'Accept': 'application/json',
-                'User-Agent': 'TermixAlertChecker/1.0'
+                'User-Agent': 'SolTermAlertChecker/1.0'
             }
         });
 
@@ -105,7 +105,7 @@ async function fetchAlertsFromGitHub(): Promise<TermixAlert[]> {
             throw new Error(`GitHub raw content error: ${response.status} ${response.statusText}`);
         }
 
-        const alerts: TermixAlert[] = await response.json() as TermixAlert[];
+        const alerts: SolTermAlert[] = await response.json() as SolTermAlert[];
 
         const now = new Date();
 
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
         const alerts = await fetchAlertsFromGitHub();
         res.json({
             alerts,
-            cached: alertCache.get('termix_alerts') !== null,
+            cached: alertCache.get('solterm_alerts') !== null,
             total_count: alerts.length
         });
     } catch (error) {

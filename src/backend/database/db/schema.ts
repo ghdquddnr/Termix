@@ -85,3 +85,12 @@ export const dismissedAlerts = sqliteTable('dismissed_alerts', {
     alertId: text('alert_id').notNull(),
     dismissedAt: text('dismissed_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const logBookmarks = sqliteTable('log_bookmarks', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    hostId: integer('host_id').notNull().references(() => sshData.id),
+    file: text('file').notNull(),
+    note: text('note'),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});

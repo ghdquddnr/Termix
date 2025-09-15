@@ -375,6 +375,18 @@ sqlite.exec(`
         id
     )
         );
+
+    CREATE TABLE IF NOT EXISTS log_bookmarks
+    (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        host_id INTEGER NOT NULL,
+        file TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+    );
 `);
 
 const addColumnIfNotExists = (table: string, column: string, definition: string) => {
@@ -436,6 +448,26 @@ const migrateSchema = () => {
     addColumnIfNotExists('file_manager_recent', 'host_id', 'INTEGER NOT NULL');
     addColumnIfNotExists('file_manager_pinned', 'host_id', 'INTEGER NOT NULL');
     addColumnIfNotExists('file_manager_shortcuts', 'host_id', 'INTEGER NOT NULL');
+
+    // log_bookmarks table may not exist on older DBs
+    try {
+        sqlite.prepare('SELECT 1 FROM log_bookmarks LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE log_bookmarks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                host_id INTEGER NOT NULL,
+                file TEXT NOT NULL,
+                note TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create log_bookmarks table');
+        }
+    }
 
     logger.success('Schema migration completed');
 };

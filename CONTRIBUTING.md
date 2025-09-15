@@ -10,7 +10,7 @@
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/LukeGus/Termix
+    git clone https://github.com/LukeGus/SolTerm
     ```
 2. Install the dependencies:
     ```sh
@@ -27,12 +27,12 @@ npx tsc -p tsconfig.node.json
 node ./dist/backend/starter.js
 ```
 
-This will start the backend and the frontend Vite server. You can access Termix by going to `http://localhost:5174/`.
+This will start the backend and the frontend Vite server. You can access SolTerm by going to `http://localhost:5174/`.
 
 ## Contributing
 
 1. **Fork the repository**: Click the "Fork" button at the top right of
-   the [repository page](https://github.com/LukeGus/Termix).
+   the [repository page](https://github.com/LukeGus/SolTerm).
 2. **Create a new branch**:
     ```sh
     git checkout -b feature/my-new-feature

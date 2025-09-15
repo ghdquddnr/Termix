@@ -5,7 +5,7 @@ import {Badge} from "@/components/ui/badge.tsx";
 import {X, ExternalLink, AlertTriangle, Info, CheckCircle, AlertCircle} from "lucide-react";
 import {useTranslation} from "react-i18next";
 
-interface TermixAlert {
+interface SolTermAlert {
     id: string;
     title: string;
     message: string;
@@ -17,7 +17,7 @@ interface TermixAlert {
 }
 
 interface AlertCardProps {
-    alert: TermixAlert;
+    alert: SolTermAlert;
     onDismiss: (alertId: string) => void;
     onClose: () => void;
 }

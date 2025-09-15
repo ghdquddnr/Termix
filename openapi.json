@@ -1,11 +1,11 @@
 {
     "openapi": "3.0.3",
     "info": {
-      "title": "Termix API",
+      "title": "SolTerm API",
       "version": "1.0.0",
-      "description": "Comprehensive API for Termix SSH management, file operations, tunneling, and server monitoring. This API provides endpoints for managing SSH hosts, file operations, tunnel connections, server monitoring, user management, and system alerts.",
+      "description": "Comprehensive API for SolTerm SSH management, file operations, tunneling, and server monitoring. This API provides endpoints for managing SSH hosts, file operations, tunnel connections, server monitoring, user management, and system alerts.",
       "contact": {
-        "name": "Termix Development Team"
+        "name": "SolTerm Development Team"
       }
     },
     "servers": [

@@ -175,13 +175,13 @@
 ### 📖 1.5 로그 관리 시스템
 
 #### 백엔드 개발
-- [ ] 로그 파일 목록 조회 API 구현 (`GET /api/logs/:hostId`)
-- [ ] 실시간 로그 스트리밍 WebSocket 구현
-- [ ] `tail -f` 명령어 래핑 및 스트리밍
-- [ ] 로그 검색 API 구현 (`POST /api/logs/:hostId/search`)
-- [ ] 로그 레벨별 필터링 기능
-- [ ] 로그 북마크 저장 API 구현
-- [ ] 로그 데이터 압축 및 최적화
+- [x] 로그 파일 목록 조회 API 구현 (`GET /api/logs/:hostId`)
+- [x] 실시간 로그 스트리밍 WebSocket 구현
+- [x] `tail -f` 명령어 래핑 및 스트리밍
+- [x] 로그 검색 API 구현 (`POST /api/logs/:hostId/search`)
+- [x] 로그 레벨별 필터링 기능
+- [x] 로그 북마크 저장 API 구현
+- [x] 로그 데이터 압축 및 최적화
 
 #### 프론트엔드 개발
 - [ ] 로그 뷰어 컴포넌트 생성 (`LogViewer.tsx`)

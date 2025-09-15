@@ -509,7 +509,7 @@
     "feedbackMessage": "Have ideas for what should come next for server management? Share them on"
   },
   "auth": {
-    "loginTitle": "Login to Termix",
+    "loginTitle": "Login to SolTerm",
     "registerTitle": "Create Account",
     "loginButton": "Login",
     "registerButton": "Register",
@@ -670,7 +670,7 @@
     "clientId": "your-client-id",
     "clientSecret": "your-client-secret",
     "authUrl": "https://your-provider.com/application/o/authorize/",
-    "redirectUrl": "https://your-provider.com/application/o/termix/",
+    "redirectUrl": "https://your-provider.com/application/o/solterm/",
     "tokenUrl": "https://your-provider.com/application/o/token/",
     "userIdField": "sub",
     "usernameField": "name",

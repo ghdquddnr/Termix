@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Termix</title>
+    <title>SolTerm</title>
     <!-- Theme flash prevention script -->
     <script>
 (function() {
@@ -15,7 +15,7 @@
     
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
-      if (name === 'termix-theme-settings') {
+      if (name === 'solterm-theme-settings') {
         try {
           themeSettings = JSON.parse(decodeURIComponent(value));
           break;

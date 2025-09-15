@@ -419,7 +419,7 @@ export function HomepageAuth({
                     <AlertDescription className="inline">
                         {t('auth.firstUserMessage')}{" "}
                         <a
-                            href="https://github.com/LukeGus/Termix/issues/new"
+                            href="https://github.com/LukeGus/SolTerm/issues/new"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 underline hover:text-blue-800 inline"

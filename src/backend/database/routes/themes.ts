@@ -67,9 +67,9 @@ const DEFAULT_THEME_PRESETS = {
     terminalTheme: 'system',
     editorTheme: 'system',
   },
-  termix: {
-    name: 'Termix',
-    description: 'Termix 기본 테마',
+  solterm: {
+    name: 'SolTerm',
+    description: 'SolTerm 기본 테마',
     mode: 'dark',
     colors: {
       primary: '#00d4aa',
@@ -79,8 +79,8 @@ const DEFAULT_THEME_PRESETS = {
       surface: '#1e293b',
       text: '#f1f5f9',
     },
-    terminalTheme: 'termix-dark',
-    editorTheme: 'termix-dark',
+    terminalTheme: 'solterm-dark',
+    editorTheme: 'solterm-dark',
   },
 };
 

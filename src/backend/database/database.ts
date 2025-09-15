@@ -5,6 +5,7 @@ import sshRoutes from './routes/ssh.js';
 import alertRoutes from './routes/alerts.js';
 import themeRoutes from './routes/themes.js';
 import monitoringRoutes from './routes/monitoring.js';
+import logsRoutes from './routes/logs.js';
 import servicesRoutes from './routes/services.js';
 import chalk from 'chalk';
 import cors from 'cors';
@@ -82,7 +83,7 @@ const githubCache = new GitHubCache();
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const REPO_OWNER = 'LukeGus';
-const REPO_NAME = 'Termix';
+const REPO_NAME = 'SolTerm';
 
 interface GitHubRelease {
     id: number;
@@ -116,7 +117,7 @@ async function fetchGitHubAPI(endpoint: string, cacheKey: string): Promise<any> 
         const response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
             headers: {
                 'Accept': 'application/vnd.github+json',
-                'User-Agent': 'TermixUpdateChecker/1.0',
+                'User-Agent': 'SolTermUpdateChecker/1.0',
                 'X-GitHub-Api-Version': '2022-11-28'
             }
         });
@@ -244,6 +245,7 @@ app.use('/alerts', alertRoutes);
 app.use('/themes', themeRoutes);
 app.use('/monitoring', monitoringRoutes);
 app.use('/services', servicesRoutes);
+app.use('/logs', logsRoutes);
 
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', err);

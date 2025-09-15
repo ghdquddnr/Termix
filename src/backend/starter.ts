@@ -7,6 +7,7 @@ import './ssh/tunnel.js';
 import './ssh/file-manager.js';
 import './ssh/server-stats.js';
 import './ssh/websocket-monitoring.js';
+import './ssh/websocket-logs.js';
 import chalk from 'chalk';
 
 const fixedIconSymbol = '🚀';

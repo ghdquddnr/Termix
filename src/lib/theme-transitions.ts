@@ -171,7 +171,7 @@ export const THEME_FLASH_PREVENTION_SCRIPT = `
     
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
-      if (name === 'termix-theme-settings') {
+      if (name === 'solterm-theme-settings') {
         try {
           themeSettings = JSON.parse(decodeURIComponent(value));
           break;

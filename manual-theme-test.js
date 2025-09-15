@@ -5,7 +5,7 @@
  * 브라우저의 개발자 도구 콘솔에서 실행하세요.
  */
 
-console.log('🎨 Termix 테마 시스템 수동 테스트 시작');
+console.log('🎨 SolTerm 테마 시스템 수동 테스트 시작');
 console.log('=' .repeat(50));
 
 // 기본 테스트 데이터

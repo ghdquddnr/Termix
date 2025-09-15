@@ -332,7 +332,7 @@ export function HostManagerHostViewer({onEditHost}: SSHManagerHostViewerProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                            window.open('https://docs.termix.site/json-import', '_blank');
+                            window.open('https://docs.solterm.site/json-import', '_blank');
                         }}
                     >
                         {t('hosts.formatGuide')}

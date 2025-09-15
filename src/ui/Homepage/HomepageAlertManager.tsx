@@ -4,7 +4,7 @@ import {Button} from "@/components/ui/button.tsx";
 import { getUserAlerts, dismissAlert } from "@/ui/main-axios.ts";
 import {useTranslation} from "react-i18next";
 
-interface TermixAlert {
+interface SolTermAlert {
     id: string;
     title: string;
     message: string;
@@ -22,7 +22,7 @@ interface AlertManagerProps {
 
 export function HomepageAlertManager({userId, loggedIn}: AlertManagerProps): React.ReactElement {
     const {t} = useTranslation();
-    const [alerts, setAlerts] = useState<TermixAlert[]>([]);
+    const [alerts, setAlerts] = useState<SolTermAlert[]>([]);
     const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function HomepageAlertManager({userId, loggedIn}: AlertManagerProps): Rea
 
             const userAlerts = response.alerts || [];
 
-            const sortedAlerts = userAlerts.sort((a: TermixAlert, b: TermixAlert) => {
+            const sortedAlerts = userAlerts.sort((a: SolTermAlert, b: SolTermAlert) => {
                 const priorityOrder = {critical: 4, high: 3, medium: 2, low: 1};
                 const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
                 const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;

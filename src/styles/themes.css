@@ -1,4 +1,4 @@
-/* Termix Theme System - CSS Variables for Dynamic Theming */
+/* SolTerm Theme System - CSS Variables for Dynamic Theming */
 
 /* Base CSS Variables for Light Theme */
 :root {
@@ -86,8 +86,8 @@
   --editor-selection: rgba(32, 201, 151, 0.3);
 }
 
-/* Termix Custom Theme */
-.termix-theme {
+/* SolTerm Custom Theme */
+.solterm-theme {
   /* Primary Colors */
   --color-primary: #00d4aa;
   --color-primary-foreground: #0f172a;

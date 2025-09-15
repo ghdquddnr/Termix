@@ -1,15 +1,15 @@
 services:
-  termix:
-    image: ghcr.io/lukegus/termix:latest
-    container_name: termix
+  solterm:
+    image: ghcr.io/lukegus/solterm:latest
+    container_name: solterm
     restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
-      - termix-data:/app/data
+      - solterm-data:/app/data
     environment:
       PORT: "8080"
 
 volumes:
-  termix-data:
+  solterm-data:
     driver: local 

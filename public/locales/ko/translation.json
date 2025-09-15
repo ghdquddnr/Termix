@@ -480,7 +480,7 @@
     "feedbackMessage": "서버 관리의 다음 기능에 대한 아이디어가 있으신가요? 공유해주세요"
   },
   "auth": {
-    "loginTitle": "Termix에 로그인",
+    "loginTitle": "SolTerm에 로그인",
     "registerTitle": "계정 생성",
     "loginButton": "로그인",
     "registerButton": "회원가입",
@@ -640,7 +640,7 @@
     "clientId": "your-client-id",
     "clientSecret": "your-client-secret",
     "authUrl": "https://your-provider.com/application/o/authorize/",
-    "redirectUrl": "https://your-provider.com/application/o/termix/",
+    "redirectUrl": "https://your-provider.com/application/o/solterm/",
     "tokenUrl": "https://your-provider.com/application/o/token/",
     "userIdField": "sub",
     "usernameField": "name",

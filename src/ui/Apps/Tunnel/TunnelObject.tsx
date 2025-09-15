@@ -268,7 +268,7 @@ export function TunnelObject({
                                                             rel="noopener noreferrer"
                                                             className="underline text-blue-600 dark:text-blue-400">Discord</a> or
                                                             create a <a
-                                                            href="https://github.com/LukeGus/Termix/issues/new"
+                                                            href="https://github.com/LukeGus/SolTerm/issues/new"
                                                             target="_blank" rel="noopener noreferrer"
                                                             className="underline text-blue-600 dark:text-blue-400">GitHub
                                                             issue</a> for help.
@@ -449,7 +449,7 @@ export function TunnelObject({
                                                             rel="noopener noreferrer"
                                                             className="underline text-blue-600 dark:text-blue-400">Discord</a> or
                                                             create a <a
-                                                            href="https://github.com/LukeGus/Termix/issues/new"
+                                                            href="https://github.com/LukeGus/SolTerm/issues/new"
                                                             target="_blank" rel="noopener noreferrer"
                                                             className="underline text-blue-600 dark:text-blue-400">GitHub
                                                             issue</a> for help.

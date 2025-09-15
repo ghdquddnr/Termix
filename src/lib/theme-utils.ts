@@ -32,7 +32,7 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
 };
 
 // 쿠키 설정
-export const THEME_COOKIE_NAME = 'termix-theme';
+export const THEME_COOKIE_NAME = 'solterm-theme';
 export const THEME_COOKIE_EXPIRY_DAYS = 365; // 1년
 
 /**

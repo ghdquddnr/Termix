@@ -28,7 +28,7 @@ npm run dev:backend
 
 ## Architecture Overview
 
-Termix is a full-stack SSH server management platform with the following key architectural components:
+SolTerm is a full-stack SSH server management platform with the following key architectural components:
 
 ### Frontend Architecture (React + TypeScript)
 - **Framework**: React 19 with TypeScript, built using Vite

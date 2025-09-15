@@ -5,14 +5,12 @@
 
 import express, { type Request, type Response } from 'express';
 import { Client } from 'ssh2';
-import { 
-  createSSHConnection, 
-  executeSSHCommand, 
-  closeSSHConnection,
+import {
+  executeSSHCommand,
   sshConnectionPool,
   SSHConnectionError,
   SSHCommandError,
-  type SSHConnectionConfig 
+  type SSHConnectionConfig
 } from '../../ssh/ssh-utils.js';
 import { 
   parsePsAuxOutput,
@@ -32,9 +30,18 @@ import {
   calculateNetworkStatistics
 } from '../../utils/network-parser.js';
 import {
+  parseDuOutput,
+  parseDfOutput,
+  parseLargeFilesOutput,
+  parseDirectorySizes,
+  enhanceFilesystemsWithMountInfo,
+  sortDiskUsage,
+  paginateDiskUsage
+} from '../../utils/disk-parser.js';
+import { diskCache, DiskCacheKeys } from '../../utils/disk-cache.js';
+import {
   type ProcessInfo,
   type ProcessListResponse,
-  type ProcessListOptions,
   ProcessSortField,
   type ProcessMonitoringError,
   ProcessErrorCode,
@@ -43,14 +50,21 @@ import {
 import {
   type NetworkConnection,
   type NetworkMonitoringResponse,
-  type NetworkMonitoringOptions,
-  type NetworkConnectionFilter,
   NetworkErrorCode,
   type NetworkMonitoringError,
-  type ListeningPort,
   type NetworkStatistics,
   type FirewallStatus
 } from '../../types/network-monitoring.js';
+import {
+  type DiskUsageInfo,
+  type DirectorySize,
+  type FilesystemInfo,
+  type LargeFile,
+  type DiskMonitoringResponse,
+  DiskSortField,
+  DiskErrorCode,
+  type DiskMonitoringError
+} from '../../types/disk-monitoring.js';
 import { db } from '../db/index.js';
 import { sshData } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -125,6 +139,22 @@ function createNetworkErrorResponse(
   message: string,
   details?: any
 ): NetworkMonitoringError {
+  return {
+    code,
+    message,
+    details,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * 디스크 모니터링 에러 응답을 생성합니다.
+ */
+function createDiskErrorResponse(
+  code: DiskErrorCode,
+  message: string,
+  details?: any
+): DiskMonitoringError {
   return {
     code,
     message,
@@ -1121,6 +1151,601 @@ router.get('/network/:hostId/firewall', async (req: Request, res: Response) => {
         )
       );
     }
+  }
+});
+
+/**
+ * GET /api/monitoring/disk/:hostId
+ * 특정 호스트의 디스크 사용량 정보를 조회합니다.
+ */
+router.get('/disk/:hostId', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  const {
+    includeDirectories = 'false',
+    includeLargeFiles = 'false',
+    largeFileThreshold = '100000000', // 100MB 기본값
+    paths,
+    sortBy = DiskSortField.SIZE,
+    sortOrder = 'desc',
+    limit,
+    offset
+  } = req.query;
+
+  logInfo(`Getting disk usage info for host: ${hostId}`);
+
+  try {
+    // 캐시 키 생성
+    const cacheKey = DiskCacheKeys.monitoring({
+      includeDirectories,
+      includeLargeFiles,
+      largeFileThreshold,
+      paths,
+      sortBy,
+      sortOrder,
+      limit,
+      offset
+    });
+
+    // 캐시에서 확인
+    const cachedData = diskCache.get<DiskMonitoringResponse>(hostId, cacheKey);
+    if (cachedData) {
+      logInfo(`Returning cached disk data for host ${hostId}`);
+      return res.json(cachedData);
+    }
+
+    // SSH 호스트 정보 조회
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    // SSH 연결 생성
+    let conn: Client;
+    try {
+      conn = await sshConnectionPool.getConnection(sshConfig);
+    } catch (error) {
+      logError(`SSH connection failed for host ${hostId}`, error);
+      return res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SSH_CONNECTION_FAILED,
+          error instanceof SSHConnectionError ? error.message : 'SSH connection failed',
+          { host: sshConfig.host, port: sshConfig.port }
+        )
+      );
+    }
+
+    try {
+      const pathsArray = paths ? (paths as string).split(',').map(p => p.trim()) : ['/'];
+      const diskUsage: DiskUsageInfo[] = [];
+      let filesystems: FilesystemInfo[] = [];
+      const directoryUsage: DirectorySize[] = [];
+      const largeFiles: LargeFile[] = [];
+
+      // 기본 명령어들
+      const commands = [
+        `df -h`, // 파일시스템 정보
+        `mount` // 마운트 정보
+      ];
+
+      // 디스크 사용량 명령어 추가
+      for (const path of pathsArray) {
+        commands.push(`du -sh "${path}" 2>/dev/null || echo "0K ${path}"`);
+      }
+
+      // 디렉토리 크기 분석이 필요한 경우
+      if (includeDirectories === 'true') {
+        for (const path of pathsArray) {
+          commands.push(`find "${path}" -maxdepth 2 -type d -exec du -sh {} \\; 2>/dev/null | head -20`);
+        }
+      }
+
+      // 큰 파일 검색이 필요한 경우
+      if (includeLargeFiles === 'true') {
+        const threshold = parseInt(largeFileThreshold as string, 10);
+        const thresholdStr = `+${Math.floor(threshold / 1024)}k`; // KB 단위로 변환
+
+        for (const path of pathsArray) {
+          commands.push(`find "${path}" -type f -size ${thresholdStr} -exec ls -la {} \\; 2>/dev/null | head -50`);
+        }
+      }
+
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 30000 }))
+      );
+
+      let commandIndex = 0;
+
+      // 파일시스템 정보 파싱 (df 명령어)
+      if (results[commandIndex].status === 'fulfilled') {
+        try {
+          const result = results[commandIndex] as PromiseFulfilledResult<any>;
+          filesystems = parseDfOutput(result.value.stdout);
+          logInfo(`Parsed ${filesystems.length} filesystems`);
+        } catch (error) {
+          logError('Failed to parse df output', error);
+        }
+      }
+      commandIndex++;
+
+      // 마운트 정보로 파일시스템 정보 보완 (mount 명령어)
+      if (results[commandIndex].status === 'fulfilled') {
+        try {
+          const result = results[commandIndex] as PromiseFulfilledResult<any>;
+          filesystems = enhanceFilesystemsWithMountInfo(result.value.stdout, filesystems);
+          logInfo('Enhanced filesystem info with mount data');
+        } catch (error) {
+          logError('Failed to parse mount output', error);
+        }
+      }
+      commandIndex++;
+
+      // 디스크 사용량 파싱 (du 명령어들)
+      for (let i = 0; i < pathsArray.length; i++) {
+        if (results[commandIndex + i].status === 'fulfilled') {
+          try {
+            const result = results[commandIndex + i] as PromiseFulfilledResult<any>;
+            const pathUsage = parseDuOutput(result.value.stdout);
+            diskUsage.push(...pathUsage);
+          } catch (error) {
+            logError(`Failed to parse du output for path ${pathsArray[i]}`, error);
+          }
+        }
+      }
+      commandIndex += pathsArray.length;
+
+      // 디렉토리 크기 파싱
+      if (includeDirectories === 'true') {
+        for (let i = 0; i < pathsArray.length; i++) {
+          if (results[commandIndex + i].status === 'fulfilled') {
+            try {
+              const result = results[commandIndex + i] as PromiseFulfilledResult<any>;
+              const dirSizes = parseDirectorySizes(result.value.stdout);
+              directoryUsage.push(...dirSizes);
+            } catch (error) {
+              logError(`Failed to parse directory sizes for path ${pathsArray[i]}`, error);
+            }
+          }
+        }
+        commandIndex += pathsArray.length;
+      }
+
+      // 큰 파일 파싱
+      if (includeLargeFiles === 'true') {
+        for (let i = 0; i < pathsArray.length; i++) {
+          if (results[commandIndex + i].status === 'fulfilled') {
+            try {
+              const result = results[commandIndex + i] as PromiseFulfilledResult<any>;
+              const files = parseLargeFilesOutput(result.value.stdout);
+              largeFiles.push(...files);
+            } catch (error) {
+              logError(`Failed to parse large files for path ${pathsArray[i]}`, error);
+            }
+          }
+        }
+      }
+
+      // 정렬 적용
+      const sortedDiskUsage = sortDiskUsage(diskUsage, sortBy as DiskSortField, sortOrder as 'asc' | 'desc');
+      const sortedDirectoryUsage = includeDirectories === 'true'
+        ? sortDiskUsage(directoryUsage, sortBy as DiskSortField, sortOrder as 'asc' | 'desc')
+        : undefined;
+      const sortedLargeFiles = includeLargeFiles === 'true'
+        ? sortDiskUsage(largeFiles, sortBy as DiskSortField, sortOrder as 'asc' | 'desc')
+        : undefined;
+
+      // 페이지네이션 적용
+      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+      const offsetNum = offset ? parseInt(offset as string, 10) : undefined;
+
+      const paginatedDiskUsage = paginateDiskUsage(sortedDiskUsage, limitNum, offsetNum);
+      const paginatedDirectoryUsage = sortedDirectoryUsage
+        ? paginateDiskUsage(sortedDirectoryUsage, limitNum, offsetNum)
+        : undefined;
+      const paginatedLargeFiles = sortedLargeFiles
+        ? paginateDiskUsage(sortedLargeFiles, limitNum, offsetNum)
+        : undefined;
+
+      // 응답 생성
+      const response: DiskMonitoringResponse = {
+        diskUsage: paginatedDiskUsage,
+        filesystems,
+        directoryUsage: paginatedDirectoryUsage,
+        largeFiles: paginatedLargeFiles,
+        total: diskUsage.length,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      };
+
+      // 캐시에 저장 (5분)
+      diskCache.set(hostId, cacheKey, response, 300);
+
+      logInfo(`Successfully retrieved disk info for host ${hostId}: ${paginatedDiskUsage.length} disk entries, ${filesystems.length} filesystems`);
+      res.json(response);
+
+    } finally {
+      // 연결 반환
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting disk info for host ${hostId}`, error);
+
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command, exitCode: error.exitCode, stderr: error.stderr }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SYSTEM_ERROR,
+          'Internal server error',
+          { error: error instanceof Error ? error.message : String(error) }
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/disk/:hostId/filesystems
+ * 특정 호스트의 파일시스템 정보만 조회합니다.
+ */
+router.get('/disk/:hostId/filesystems', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+
+  logInfo(`Getting filesystem info for host: ${hostId}`);
+
+  try {
+    // 캐시 확인
+    const cacheKey = DiskCacheKeys.filesystems();
+    const cachedData = diskCache.get<FilesystemInfo[]>(hostId, cacheKey);
+    if (cachedData) {
+      logInfo(`Returning cached filesystem data for host ${hostId}`);
+      return res.json({
+        filesystems: cachedData,
+        count: cachedData.length,
+        timestamp: new Date().toISOString(),
+        hostname: 'cached'
+      });
+    }
+
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      const commands = ['df -h', 'mount'];
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 15000 }))
+      );
+
+      let filesystems: FilesystemInfo[] = [];
+
+      if (results[0].status === 'fulfilled') {
+        filesystems = parseDfOutput(results[0].value.stdout);
+      }
+
+      if (results[1].status === 'fulfilled') {
+        filesystems = enhanceFilesystemsWithMountInfo(results[1].value.stdout, filesystems);
+      }
+
+      // 캐시에 저장 (10분)
+      diskCache.set(hostId, cacheKey, filesystems, 600);
+
+      logInfo(`Successfully retrieved ${filesystems.length} filesystems for host ${hostId}`);
+      res.json({
+        filesystems,
+        count: filesystems.length,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting filesystem info for host ${hostId}`, error);
+
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/disk/:hostId/usage
+ * 특정 호스트의 디스크 사용량 정보만 조회합니다.
+ */
+router.get('/disk/:hostId/usage', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  const { paths = '/' } = req.query;
+
+  logInfo(`Getting disk usage for host: ${hostId}`);
+
+  try {
+    const pathsArray = (paths as string).split(',').map(p => p.trim());
+    const cacheKey = DiskCacheKeys.diskUsage(pathsArray);
+
+    // 캐시 확인
+    const cachedData = diskCache.get<DiskUsageInfo[]>(hostId, cacheKey);
+    if (cachedData) {
+      logInfo(`Returning cached disk usage data for host ${hostId}`);
+      return res.json({
+        diskUsage: cachedData,
+        count: cachedData.length,
+        timestamp: new Date().toISOString(),
+        hostname: 'cached'
+      });
+    }
+
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      const commands = pathsArray.map(path => `du -sh "${path}" 2>/dev/null || echo "0K ${path}"`);
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 20000 }))
+      );
+
+      const diskUsage: DiskUsageInfo[] = [];
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          try {
+            const usage = parseDuOutput(result.value.stdout);
+            diskUsage.push(...usage);
+          } catch (error) {
+            logError(`Failed to parse du output for path ${pathsArray[index]}`, error);
+          }
+        }
+      });
+
+      // 캐시에 저장 (5분)
+      diskCache.set(hostId, cacheKey, diskUsage, 300);
+
+      logInfo(`Successfully retrieved disk usage for ${pathsArray.length} paths on host ${hostId}`);
+      res.json({
+        diskUsage,
+        count: diskUsage.length,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting disk usage for host ${hostId}`, error);
+
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * GET /api/monitoring/disk/:hostId/large-files
+ * 특정 호스트의 큰 파일 목록을 조회합니다.
+ */
+router.get('/disk/:hostId/large-files', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  const {
+    threshold = '100000000', // 100MB 기본값
+    paths = '/',
+    limit = '50'
+  } = req.query;
+
+  logInfo(`Getting large files for host: ${hostId}, threshold: ${threshold}`);
+
+  try {
+    const thresholdBytes = parseInt(threshold as string, 10);
+    const pathsArray = (paths as string).split(',').map(p => p.trim());
+    const limitNum = parseInt(limit as string, 10);
+
+    const cacheKey = DiskCacheKeys.largeFiles(thresholdBytes, pathsArray);
+
+    // 캐시 확인
+    const cachedData = diskCache.get<LargeFile[]>(hostId, cacheKey);
+    if (cachedData) {
+      logInfo(`Returning cached large files data for host ${hostId}`);
+      return res.json({
+        largeFiles: cachedData.slice(0, limitNum),
+        count: cachedData.length,
+        threshold: thresholdBytes,
+        timestamp: new Date().toISOString(),
+        hostname: 'cached'
+      });
+    }
+
+    const sshConfig = await getSSHHostInfo(hostId);
+    if (!sshConfig) {
+      return res.status(404).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SSH_CONNECTION_FAILED,
+          'SSH host not found'
+        )
+      );
+    }
+
+    const conn = await sshConnectionPool.getConnection(sshConfig);
+
+    try {
+      const thresholdStr = `+${Math.floor(thresholdBytes / 1024)}k`; // KB 단위로 변환
+      const commands = pathsArray.map(path =>
+        `find "${path}" -type f -size ${thresholdStr} -exec ls -la {} \\; 2>/dev/null | head -${limitNum * 2}`
+      );
+
+      const results = await Promise.allSettled(
+        commands.map(cmd => executeSSHCommand(conn, cmd, { timeout: 60000 }))
+      );
+
+      const largeFiles: LargeFile[] = [];
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          try {
+            const files = parseLargeFilesOutput(result.value.stdout);
+            largeFiles.push(...files);
+          } catch (error) {
+            logError(`Failed to parse large files for path ${pathsArray[index]}`, error);
+          }
+        }
+      });
+
+      // 크기 기준으로 정렬하고 중복 제거
+      const uniqueFiles = Array.from(
+        new Map(largeFiles.map(file => [file.path, file])).values()
+      );
+      const sortedFiles = sortDiskUsage(uniqueFiles, DiskSortField.SIZE, 'desc');
+      const limitedFiles = sortedFiles.slice(0, limitNum);
+
+      // 캐시에 저장 (15분 - 큰 파일 검색은 시간이 오래 걸림)
+      diskCache.set(hostId, cacheKey, sortedFiles, 900);
+
+      logInfo(`Successfully found ${limitedFiles.length} large files on host ${hostId}`);
+      res.json({
+        largeFiles: limitedFiles,
+        count: sortedFiles.length,
+        threshold: thresholdBytes,
+        timestamp: new Date().toISOString(),
+        hostname: sshConfig.host
+      });
+
+    } finally {
+      sshConnectionPool.releaseConnection(sshConfig);
+    }
+
+  } catch (error) {
+    logError(`Error getting large files for host ${hostId}`, error);
+
+    if (error instanceof SSHCommandError) {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.COMMAND_EXECUTION_FAILED,
+          `Command execution failed: ${error.message}`,
+          { command: error.command }
+        )
+      );
+    } else {
+      res.status(500).json(
+        createDiskErrorResponse(
+          DiskErrorCode.SYSTEM_ERROR,
+          'Internal server error'
+        )
+      );
+    }
+  }
+});
+
+/**
+ * DELETE /api/monitoring/disk/:hostId/cache
+ * 특정 호스트의 디스크 캐시를 삭제합니다.
+ */
+router.delete('/disk/:hostId/cache', async (req: Request, res: Response) => {
+  const { hostId } = req.params;
+  const { cacheKey } = req.query;
+
+  logInfo(`Clearing disk cache for host: ${hostId}`);
+
+  try {
+    if (cacheKey) {
+      diskCache.delete(hostId, cacheKey as string);
+      logInfo(`Cleared specific cache key: ${cacheKey} for host ${hostId}`);
+    } else {
+      diskCache.delete(hostId);
+      logInfo(`Cleared all disk cache for host ${hostId}`);
+    }
+
+    res.json({
+      success: true,
+      message: `Cache cleared for host ${hostId}`,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logError(`Error clearing cache for host ${hostId}`, error);
+    res.status(500).json(
+      createDiskErrorResponse(
+        DiskErrorCode.SYSTEM_ERROR,
+        'Failed to clear cache'
+      )
+    );
+  }
+});
+
+/**
+ * GET /api/monitoring/disk/cache/stats
+ * 디스크 캐시 통계를 조회합니다.
+ */
+router.get('/disk/cache/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = diskCache.getStats();
+
+    res.json({
+      ...stats,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logError('Error getting cache stats', error);
+    res.status(500).json(
+      createDiskErrorResponse(
+        DiskErrorCode.SYSTEM_ERROR,
+        'Failed to get cache statistics'
+      )
+    );
   }
 });
 

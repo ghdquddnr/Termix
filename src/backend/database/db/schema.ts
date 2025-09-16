@@ -90,7 +90,23 @@ export const logBookmarks = sqliteTable('log_bookmarks', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     userId: text('user_id').notNull().references(() => users.id),
     hostId: integer('host_id').notNull().references(() => sshData.id),
-    file: text('file').notNull(),
+    logFile: text('log_file').notNull(),
+    lineNumber: integer('line_number'),
+    timestamp: text('timestamp'),
     note: text('note'),
+    tags: text('tags'),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const logSearchHistory = sqliteTable('log_search_history', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    hostId: integer('host_id').notNull().references(() => sshData.id),
+    searchQuery: text('search_query').notNull(),
+    searchType: text('search_type').notNull().default('content'), // 'content', 'filename', 'regex'
+    logFile: text('log_file'),
+    resultCount: integer('result_count').default(0),
+    lastUsed: text('last_used').notNull().default(sql`CURRENT_TIMESTAMP`),
     createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

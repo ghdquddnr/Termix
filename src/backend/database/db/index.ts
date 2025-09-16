@@ -449,24 +449,91 @@ const migrateSchema = () => {
     addColumnIfNotExists('file_manager_pinned', 'host_id', 'INTEGER NOT NULL');
     addColumnIfNotExists('file_manager_shortcuts', 'host_id', 'INTEGER NOT NULL');
 
-    // log_bookmarks table may not exist on older DBs
+    // log_bookmarks table migration - update schema
     try {
         sqlite.prepare('SELECT 1 FROM log_bookmarks LIMIT 1').get();
+        // Update existing log_bookmarks table with new columns
+        addColumnIfNotExists('log_bookmarks', 'log_file', 'TEXT');
+        addColumnIfNotExists('log_bookmarks', 'line_number', 'INTEGER');
+        addColumnIfNotExists('log_bookmarks', 'timestamp', 'TEXT');
+        addColumnIfNotExists('log_bookmarks', 'tags', 'TEXT');
+        addColumnIfNotExists('log_bookmarks', 'updated_at', 'TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
+
+        // Migrate old 'file' column to 'log_file' if needed
+        try {
+            const hasFileColumn = sqlite.prepare("PRAGMA table_info(log_bookmarks)").all()
+                .some((col: any) => col.name === 'file');
+            const hasLogFileColumn = sqlite.prepare("PRAGMA table_info(log_bookmarks)").all()
+                .some((col: any) => col.name === 'log_file');
+
+            if (hasFileColumn && hasLogFileColumn) {
+                // Copy data from 'file' to 'log_file' if log_file is empty
+                sqlite.exec(`UPDATE log_bookmarks SET log_file = file WHERE log_file IS NULL OR log_file = ''`);
+            }
+        } catch (migrationError) {
+            logger.warn('Could not migrate file column to log_file');
+        }
     } catch (e) {
         try {
             sqlite.exec(`CREATE TABLE log_bookmarks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT NOT NULL,
                 host_id INTEGER NOT NULL,
-                file TEXT NOT NULL,
+                log_file TEXT NOT NULL,
+                line_number INTEGER,
+                timestamp TEXT,
                 note TEXT,
+                tags TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 FOREIGN KEY(host_id) REFERENCES ssh_data(id)
             );`);
         } catch (e2) {
             logger.warn('Failed to create log_bookmarks table');
         }
+    }
+
+    // log_search_history table migration
+    try {
+        sqlite.prepare('SELECT 1 FROM log_search_history LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE log_search_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                host_id INTEGER NOT NULL,
+                search_query TEXT NOT NULL,
+                search_type TEXT NOT NULL DEFAULT 'content',
+                log_file TEXT,
+                result_count INTEGER DEFAULT 0,
+                last_used TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create log_search_history table');
+        }
+    }
+
+    // Create indexes for log tables if they don't exist
+    try {
+        // Log bookmarks indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_bookmarks_user_host ON log_bookmarks(user_id, host_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_bookmarks_log_file ON log_bookmarks(log_file)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_bookmarks_tags ON log_bookmarks(tags)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_bookmarks_created_at ON log_bookmarks(created_at DESC)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_bookmarks_line_number ON log_bookmarks(log_file, line_number)`);
+
+        // Log search history indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_search_history_user_host ON log_search_history(user_id, host_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_search_history_query ON log_search_history(search_query)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_search_history_last_used ON log_search_history(last_used DESC)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_search_history_log_file ON log_search_history(log_file)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_log_search_history_search_type ON log_search_history(search_type)`);
+    } catch (indexError) {
+        logger.warn('Failed to create some log table indexes');
     }
 
     logger.success('Schema migration completed');

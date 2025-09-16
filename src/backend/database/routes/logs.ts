@@ -13,7 +13,7 @@ import {
   SSHConnectionError,
 } from '../../ssh/ssh-utils.js';
 import { db } from '../db/index.js';
-import { sshData, logBookmarks } from '../db/schema.js';
+import { sshData, logBookmarks, logSearchHistory } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { parseFindStatOutput, parseGrepOutput, type LogLevel } from '../../utils/log-parser.js';
@@ -86,14 +86,22 @@ router.get('/bookmarks', authenticateJWT, async (req: Request, res: Response) =>
 });
 
 // POST /logs/bookmarks
-// body: { hostId: number, file: string, note?: string }
+// body: { hostId: number, logFile: string, note?: string, lineNumber?: number, timestamp?: string, tags?: string }
 router.post('/bookmarks', authenticateJWT, async (req: Request, res: Response) => {
   const userId = extractUserId(req);
-  const { hostId, file, note } = req.body || {};
+  const { hostId, logFile, note, lineNumber, timestamp, tags } = req.body || {};
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-  if (!hostId || !file) return res.status(400).json({ error: 'hostId and file are required' });
+  if (!hostId || !logFile) return res.status(400).json({ error: 'hostId and logFile are required' });
   try {
-    await db.insert(logBookmarks).values({ userId, hostId, file, note });
+    await db.insert(logBookmarks).values({
+      userId,
+      hostId,
+      logFile,
+      note,
+      lineNumber,
+      timestamp,
+      tags
+    });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to save bookmark' });

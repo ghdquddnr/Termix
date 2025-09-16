@@ -110,3 +110,78 @@ export const logSearchHistory = sqliteTable('log_search_history', {
     lastUsed: text('last_used').notNull().default(sql`CURRENT_TIMESTAMP`),
     createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+// Script Repository System Tables
+
+export const scriptCategories = sqliteTable('script_categories', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    description: text('description'),
+    parentId: integer('parent_id').references(() => scriptCategories.id),
+    color: text('color').default('#6B7280'),
+    icon: text('icon').default('folder'),
+    sortOrder: integer('sort_order').default(0),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const scriptLibrary = sqliteTable('script_library', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    name: text('name').notNull(),
+    description: text('description'),
+    content: text('content').notNull(),
+    language: text('language').notNull().default('bash'), // 'bash', 'python', 'powershell', 'sql', etc.
+    categoryId: integer('category_id').references(() => scriptCategories.id),
+    tags: text('tags'), // JSON array of tags
+    isPublic: integer('is_public', {mode: 'boolean'}).notNull().default(false),
+    isTemplate: integer('is_template', {mode: 'boolean'}).notNull().default(false),
+    isFavorite: integer('is_favorite', {mode: 'boolean'}).notNull().default(false),
+    version: text('version').default('1.0.0'),
+    parameters: text('parameters'), // JSON schema for script parameters
+    environment: text('environment'), // Required environment variables
+    timeout: integer('timeout').default(300), // Execution timeout in seconds
+    retryCount: integer('retry_count').default(0),
+    lastExecuted: text('last_executed'),
+    executionCount: integer('execution_count').default(0),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const scriptVersions = sqliteTable('script_versions', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    scriptId: integer('script_id').notNull().references(() => scriptLibrary.id),
+    version: text('version').notNull(),
+    content: text('content').notNull(),
+    changeLog: text('change_log'),
+    createdBy: text('created_by').notNull().references(() => users.id),
+    isActive: integer('is_active', {mode: 'boolean'}).notNull().default(false),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const scriptPermissions = sqliteTable('script_permissions', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    scriptId: integer('script_id').notNull().references(() => scriptLibrary.id),
+    userId: text('user_id').references(() => users.id),
+    userGroup: text('user_group'), // For group-based permissions
+    permissionType: text('permission_type').notNull(), // 'read', 'execute', 'edit', 'admin'
+    grantedBy: text('granted_by').notNull().references(() => users.id),
+    grantedAt: text('granted_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    expiresAt: text('expires_at'), // Optional expiration
+});
+
+export const scriptExecutionHistory = sqliteTable('script_execution_history', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    scriptId: integer('script_id').notNull().references(() => scriptLibrary.id),
+    versionId: integer('version_id').references(() => scriptVersions.id),
+    userId: text('user_id').notNull().references(() => users.id),
+    hostId: integer('host_id').references(() => sshData.id),
+    parameters: text('parameters'), // JSON of execution parameters
+    status: text('status').notNull(), // 'running', 'completed', 'failed', 'cancelled'
+    exitCode: integer('exit_code'),
+    output: text('output'),
+    errorOutput: text('error_output'),
+    startTime: text('start_time').notNull().default(sql`CURRENT_TIMESTAMP`),
+    endTime: text('end_time'),
+    duration: integer('duration'), // Execution time in milliseconds
+});

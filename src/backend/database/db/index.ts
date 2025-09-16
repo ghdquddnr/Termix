@@ -536,6 +536,168 @@ const migrateSchema = () => {
         logger.warn('Failed to create some log table indexes');
     }
 
+    // Script repository system tables migration
+    try {
+        sqlite.prepare('SELECT 1 FROM script_categories LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE script_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                parent_id INTEGER,
+                color TEXT DEFAULT '#6B7280',
+                icon TEXT DEFAULT 'folder',
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(parent_id) REFERENCES script_categories(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create script_categories table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM script_library LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE script_library (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                content TEXT NOT NULL,
+                language TEXT NOT NULL DEFAULT 'bash',
+                category_id INTEGER,
+                tags TEXT,
+                is_public INTEGER NOT NULL DEFAULT 0,
+                is_template INTEGER NOT NULL DEFAULT 0,
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                version TEXT DEFAULT '1.0.0',
+                parameters TEXT,
+                environment TEXT,
+                timeout INTEGER DEFAULT 300,
+                retry_count INTEGER DEFAULT 0,
+                last_executed TEXT,
+                execution_count INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(category_id) REFERENCES script_categories(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create script_library table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM script_versions LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE script_versions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                script_id INTEGER NOT NULL,
+                version TEXT NOT NULL,
+                content TEXT NOT NULL,
+                change_log TEXT,
+                created_by TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(script_id) REFERENCES script_library(id),
+                FOREIGN KEY(created_by) REFERENCES users(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create script_versions table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM script_permissions LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE script_permissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                script_id INTEGER NOT NULL,
+                user_id TEXT,
+                user_group TEXT,
+                permission_type TEXT NOT NULL,
+                granted_by TEXT NOT NULL,
+                granted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT,
+                FOREIGN KEY(script_id) REFERENCES script_library(id),
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(granted_by) REFERENCES users(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create script_permissions table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM script_execution_history LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE script_execution_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                script_id INTEGER NOT NULL,
+                version_id INTEGER,
+                user_id TEXT NOT NULL,
+                host_id INTEGER,
+                parameters TEXT,
+                status TEXT NOT NULL,
+                exit_code INTEGER,
+                output TEXT,
+                error_output TEXT,
+                start_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                end_time TEXT,
+                duration INTEGER,
+                FOREIGN KEY(script_id) REFERENCES script_library(id),
+                FOREIGN KEY(version_id) REFERENCES script_versions(id),
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create script_execution_history table');
+        }
+    }
+
+    // Create indexes for script repository tables
+    try {
+        // Script categories indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_categories_parent_id ON script_categories(parent_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_categories_name ON script_categories(name)`);
+
+        // Script library indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_user_id ON script_library(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_category_id ON script_library(category_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_language ON script_library(language)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_is_public ON script_library(is_public)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_is_template ON script_library(is_template)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_name ON script_library(name)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_library_created_at ON script_library(created_at DESC)`);
+
+        // Script versions indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_versions_script_id ON script_versions(script_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_versions_is_active ON script_versions(script_id, is_active)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_versions_version ON script_versions(script_id, version)`);
+
+        // Script permissions indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_permissions_script_id ON script_permissions(script_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_permissions_user_id ON script_permissions(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_permissions_user_group ON script_permissions(user_group)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_permissions_type ON script_permissions(permission_type)`);
+
+        // Script execution history indexes
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_execution_script_id ON script_execution_history(script_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_execution_user_id ON script_execution_history(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_execution_host_id ON script_execution_history(host_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_execution_status ON script_execution_history(status)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_script_execution_start_time ON script_execution_history(start_time DESC)`);
+    } catch (indexError) {
+        logger.warn('Failed to create some script repository table indexes');
+    }
+
     logger.success('Schema migration completed');
 };
 

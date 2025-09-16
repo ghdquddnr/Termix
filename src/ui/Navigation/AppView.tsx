@@ -112,19 +112,19 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
         const mainTab = terminalTabs.find((tab: any) => tab.id === currentTab);
         const layoutTabs = [mainTab, ...splitTabs.filter((t: any) => t && t.id !== (mainTab && (mainTab as any).id))].filter(Boolean) as any[];
 
-        if (allSplitScreenTab.length === 0 && mainTab) {
-            const isFileManagerTab = mainTab.type === 'file_manager';
-            const forceVisible = mainTab.type === 'log_viewer';
+        if (allSplitScreenTab.length === 0 && mainTab && mainTab.type !== 'log_viewer') {
+            const isFullBleed = mainTab.type === 'file_manager';
+            const shouldWaitReady = mainTab.type === 'terminal' || mainTab.type === 'server';
             styles[mainTab.id] = {
                 position: 'absolute',
-                top: isFileManagerTab ? 0 : 2,
-                left: isFileManagerTab ? 0 : 2,
-                right: isFileManagerTab ? 0 : 2,
-                bottom: isFileManagerTab ? 0 : 2,
+                top: isFullBleed ? 0 : 2,
+                left: isFullBleed ? 0 : 2,
+                right: isFullBleed ? 0 : 2,
+                bottom: isFullBleed ? 0 : 2,
                 zIndex: 20,
                 display: 'block',
                 pointerEvents: 'auto',
-                opacity: forceVisible ? 1 : (ready ? 1 : 0)
+                opacity: (shouldWaitReady ? ready : true) ? 1 : 0
             };
         } else {
             layoutTabs.forEach((t: any) => {
@@ -148,17 +148,31 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
 
         return (
             <div style={{position: 'absolute', inset: 0, zIndex: 1}}>
-                {terminalTabs.map((t: any) => {
+                {terminalTabs.filter((t: any) => t.type !== 'log_viewer').map((t: any) => {
                     const hasStyle = !!styles[t.id];
                     const isVisible = hasStyle || (allSplitScreenTab.length === 0 && t.id === currentTab);
 
+                    const shouldWaitReady = t.type === 'terminal' || t.type === 'server';
                     const finalStyle: React.CSSProperties = hasStyle
                         ? {...styles[t.id], overflow: 'hidden'}
-                        : {
-                            position: 'absolute', inset: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: 0,
-                        } as React.CSSProperties;
+                        : isVisible
+                            ? {
+                                position: 'absolute',
+                                top: (t.type === 'file_manager') ? 0 : 2,
+                                left: (t.type === 'file_manager') ? 0 : 2,
+                                right: (t.type === 'file_manager') ? 0 : 2,
+                                bottom: (t.type === 'file_manager') ? 0 : 2,
+                                zIndex: 20,
+                                display: 'block',
+                                pointerEvents: 'auto',
+                                opacity: (shouldWaitReady ? ready : true) ? 1 : 0,
+                                overflow: 'hidden'
+                            } as React.CSSProperties
+                            : {
+                                position: 'absolute', inset: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: 0,
+                            } as React.CSSProperties;
 
-                    const effectiveVisible = isVisible && ready;
+                    const effectiveVisible = isVisible && (shouldWaitReady ? ready : true);
                     return (
                         <div key={t.id} style={finalStyle}>
                             <div className="absolute inset-0 rounded-md bg-[#18181b]">
@@ -205,8 +219,6 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                                         isTopbarOpen={isTopbarOpen}
                                         embedded={true}
                                     />
-                                ) : t.type === 'log_viewer' ? (
-                                    <LogsApp />
                                 ) : null}
                             </div>
                         </div>
@@ -556,6 +568,29 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     const currentTabData = tabs.find((tab: any) => tab.id === currentTab);
     const isFileManager = currentTabData?.type === 'file_manager';
     const isSplitScreen = allSplitScreenTab.length > 0;
+    // 로그 뷰어는 인라인 렌더링 사용
+    const isInlineLogViewer = currentTabData?.type === 'log_viewer';
+
+    // 로그 뷰어 탭이 활성화되어 있는지 다양한 방법으로 확인
+    const logViewerTabExists = terminalTabs.some(tab => tab.type === 'log_viewer');
+    const hasLogViewerTab = tabs.some((tab: any) => tab.type === 'log_viewer');
+    const currentTabIsLogViewer = currentTabData?.type === 'log_viewer';
+
+    // DOM에서 로그 뷰어 탭이 활성화되어 있는지 확인 (fallback)
+    const isLogViewerActive = typeof window !== 'undefined' &&
+        document.querySelector('button[active]')?.textContent?.includes('로그 뷰어');
+
+    // 로그 뷰어 탭이 하나라도 있거나 활성화되어 있으면 인라인 렌더링 사용
+    const shouldShowLogViewer = isInlineLogViewer || logViewerTabExists || hasLogViewerTab || currentTabIsLogViewer || isLogViewerActive;
+
+    // 디버깅을 위한 콘솔 로그
+    console.log('AppView Debug:', {
+        shouldShowLogViewer,
+        currentTabData,
+        isInlineLogViewer,
+        logViewerTabExists,
+        hasLogViewerTab
+    });
     
     const topMarginPx = isTopbarOpen ? 74 : 26;
     const leftMarginPx = sidebarState === 'collapsed' ? 26 : 8;
@@ -575,8 +610,16 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                 height: `calc(100vh - ${topMarginPx + bottomMarginPx}px)`,
             }}
         >
-            {renderTerminalsLayer()}
-            {renderSplitOverlays()}
+            {shouldShowLogViewer ? (
+                <div className="h-full w-full">
+                    <LogsApp />
+                </div>
+            ) : (
+                <>
+                    {renderTerminalsLayer()}
+                    {renderSplitOverlays()}
+                </>
+            )}
         </div>
     );
 }

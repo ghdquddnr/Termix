@@ -378,6 +378,7 @@ export async function getSSHHosts(): Promise<SSHHost[]> {
         return response.data;
     } catch (error) {
         handleApiError(error, 'fetch SSH hosts');
+        return []; // This line will never be reached due to handleApiError throwing, but TypeScript needs it
     }
 }
 

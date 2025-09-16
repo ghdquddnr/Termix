@@ -115,7 +115,7 @@ export function LeftSidebar({
 
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
-    const {tabs: tabList, addTab, setCurrentTab, allSplitScreenTab} = useTabs() as any;
+    const {tabs: tabList, addTab, setCurrentTab, allSplitScreenTab, currentTab} = useTabs() as any;
     const isSplitScreenActive = Array.isArray(allSplitScreenTab) && allSplitScreenTab.length > 0;
     const sshManagerTab = tabList.find((t) => t.type === 'ssh_manager');
     const openSshManagerTab = () => {
@@ -178,15 +178,32 @@ export function LeftSidebar({
         setCurrentTab(id);
     };
 
+    const logViewerTab = tabList.find((t: any) => t.type === 'log_viewer');
     const openLogViewerTab = () => {
         if (isSplitScreenActive) return;
-        const logViewerTab = tabList.find((t: any) => t.type === 'log_viewer');
         if (logViewerTab) {
             setCurrentTab(logViewerTab.id);
             return;
         }
         const id = addTab({ type: 'log_viewer', title: '로그 뷰어' } as any);
         setCurrentTab(id);
+    };
+
+    // Helper functions to check if tabs are active
+    const isTabActive = (tabType: string) => {
+        const tab = tabList.find((t: any) => t.type === tabType);
+        return tab && tab.id === currentTab;
+    };
+
+    // Get button variant based on active state
+    const getButtonVariant = (tabType: string) => {
+        return isTabActive(tabType) ? 'default' : 'outline';
+    };
+
+    // Get button className based on active state
+    const getButtonClassName = (tabType: string) => {
+        const baseClassName = "m-2 flex flex-row font-semibold border-2 border-sidebar-border";
+        return isTabActive(tabType) ? `${baseClassName} bg-primary text-primary-foreground` : baseClassName;
     };
 
     const [hosts, setHosts] = useState<SSHHost[]>([]);
@@ -349,37 +366,37 @@ export function LeftSidebar({
                     <Separator className="p-0.25"/>
                     <SidebarContent>
                         <SidebarGroup className="!m-0 !p-0 !-mb-2">
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('ssh_manager')} variant={getButtonVariant('ssh_manager')}
                                     onClick={openSshManagerTab} disabled={!!sshManagerTab || isSplitScreenActive}
                                     title={sshManagerTab ? t('interface.sshManagerAlreadyOpen') : isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <HardDrive strokeWidth="2.5"/>
                                 {t('nav.hostManager')}
                             </Button>
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('process_monitor')} variant={getButtonVariant('process_monitor')}
                                     onClick={openProcessMonitorTab} disabled={isSplitScreenActive}
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Activity strokeWidth="2.5"/>
                                 프로세스 모니터링
                             </Button>
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('service_manager')} variant={getButtonVariant('service_manager')}
                                     onClick={openServiceManagerTab} disabled={isSplitScreenActive}
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Cog strokeWidth="2.5"/>
                                 서비스 관리
                             </Button>
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('network_monitor')} variant={getButtonVariant('network_monitor')}
                                     onClick={openNetworkMonitorTab} disabled={isSplitScreenActive}
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <Network strokeWidth="2.5"/>
                                 네트워크 모니터링
                             </Button>
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('disk_monitor')} variant={getButtonVariant('disk_monitor')}
                                     onClick={openDiskMonitorTab} disabled={isSplitScreenActive}
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <HardDrive strokeWidth="2.5"/>
                                 디스크 모니터링
                             </Button>
-                            <Button className="m-2 flex flex-row font-semibold border-2 border-sidebar-border" variant="outline"
+                            <Button className={getButtonClassName('log_viewer')} variant={getButtonVariant('log_viewer')}
                                     onClick={openLogViewerTab} disabled={isSplitScreenActive}
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <File strokeWidth="2.5"/>

@@ -211,13 +211,13 @@
 - [x] 스크립트 권한 및 공유 설정 스키마
 
 #### 백엔드 API 개발
-- [ ] 스크립트 CRUD API 구현 (`/api/scripts/`)
-- [ ] 스크립트 실행 API 구현 (`POST /api/scripts/:id/execute`)
-- [ ] 스크립트 카테고리 관리 API
-- [ ] 스크립트 검색 및 태그 필터링 API
-- [ ] 스크립트 공유 및 권한 관리 API
-- [ ] 스크립트 버전 관리 기능
-- [ ] 스크립트 실행 로그 저장 기능
+- [x] 스크립트 CRUD API 구현 (`/api/scripts/`)
+- [x] 스크립트 실행 API 구현 (`POST /api/scripts/:id/execute`)
+- [x] 스크립트 카테고리 관리 API
+- [x] 스크립트 검색 및 태그 필터링 API
+- [x] 스크립트 공유 및 권한 관리 API
+- [x] 스크립트 버전 관리 기능
+- [x] 스크립트 실행 로그 저장 기능
 
 #### 프론트엔드 개발
 - [ ] 스크립트 라이브러리 메인 페이지 (`ScriptLibrary.tsx`)

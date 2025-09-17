@@ -14,6 +14,7 @@ import {
     Network,
     HardDrive,
     File as FileIcon,
+    BookOpen,
 } from "lucide-react";
 
 interface TabProps {
@@ -235,6 +236,32 @@ export function Tab({
                 >
                     <FileIcon className="mr-1 h-4 w-4" />
                     {title || '로그 뷰어'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
+    if (tabType === "script_library") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <BookOpen className="mr-1 h-4 w-4" />
+                    {title || '스크립트 라이브러리'}
                 </Button>
                 {canClose && (
                     <Button

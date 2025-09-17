@@ -206,7 +206,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
     const currentTabIsAdmin = currentTabObj?.type === 'admin';
     const currentTabIsThemeSettings = currentTabObj?.type === 'theme_settings';
 
-    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal');
+    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor' || tab.type === 'disk_monitor' || tab.type === 'log_viewer' || tab.type === 'script_library');
 
     function getCookie(name: string) {
         return document.cookie.split('; ').reduce((r, v) => {
@@ -256,6 +256,7 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                         const isServiceManager = tab.type === 'service_manager';
                         const isNetworkMonitor = tab.type === 'network_monitor';
                         const isLogViewer = tab.type === 'log_viewer';
+                        const isScriptLibrary = tab.type === 'script_library';
                         const isSplittable = isTerminal || isServer || isFileManager;
                         const isSplitButtonDisabled = (isActive && !isSplitScreenActive) || ((allSplitScreenTab?.length || 0) >= 3 && !isSplit);
                         const disableSplit = !isSplittable || isSplitButtonDisabled || isActive || currentTabIsHome || currentTabIsSshManager || currentTabIsAdmin || currentTabIsThemeSettings;
@@ -279,7 +280,8 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                     isProcessMonitor ||
                                     isServiceManager ||
                                     isNetworkMonitor ||
-                                    isLogViewer
+                                    isLogViewer ||
+                                    isScriptLibrary
                                 ) ? () => handleTabClose(tab.id) : undefined}
                                 onSplit={isSplittable ? () => handleTabSplit(tab.id) : undefined}
                                 canSplit={isSplittable}
@@ -294,7 +296,8 @@ export function TopNavbar({isTopbarOpen, setIsTopbarOpen}: TopNavbarProps): Reac
                                     isProcessMonitor ||
                                     isServiceManager ||
                                     isNetworkMonitor ||
-                                    isLogViewer
+                                    isLogViewer ||
+                                    isScriptLibrary
                                 }
                                 disableActivate={disableActivate}
                                 disableSplit={disableSplit}

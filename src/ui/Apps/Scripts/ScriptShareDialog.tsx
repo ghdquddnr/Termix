@@ -27,7 +27,7 @@ import {
     Link
 } from "lucide-react";
 import {useTranslation} from "react-i18next";
-import axios from "axios";
+import {authApi} from "@/ui/main-axios.ts";
 
 interface ScriptShareDialogProps {
     script: Script;
@@ -87,7 +87,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
 
     const loadPermissions = async () => {
         try {
-            const response = await axios.get(`/scripts/${script.id}/permissions`);
+            const response = await authApi.get(`/scripts/${script.id}/permissions`);
             setPermissions(response.data);
         } catch (error) {
             console.error('Failed to load permissions:', error);
@@ -96,7 +96,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
 
     const loadUsers = async () => {
         try {
-            const response = await axios.get('/users');
+            const response = await authApi.get('/users');
             setUsers(response.data.filter((user: User) => user.id !== script.userId));
         } catch (error) {
             console.error('Failed to load users:', error);
@@ -106,7 +106,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
     const handlePublicToggle = async (checked: boolean) => {
         setLoading(true);
         try {
-            await axios.patch(`/scripts/${script.id}`, {
+            await authApi.patch(`/scripts/${script.id}`, {
                 isPublic: checked
             });
             setIsPublic(checked);
@@ -121,7 +121,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
     const handleTemplateToggle = async (checked: boolean) => {
         setLoading(true);
         try {
-            await axios.patch(`/scripts/${script.id}`, {
+            await authApi.patch(`/scripts/${script.id}`, {
                 isTemplate: checked
             });
             setIsTemplate(checked);
@@ -150,7 +150,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
                 payload.expiresAt = newPermissionExpiry;
             }
 
-            await axios.post(`/scripts/${script.id}/permissions`, payload);
+            await authApi.post(`/scripts/${script.id}/permissions`, payload);
 
             // Reset form
             setNewPermissionUser("");
@@ -171,7 +171,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
         if (confirm(t('script.share.confirmRemovePermission'))) {
             setLoading(true);
             try {
-                await axios.delete(`/scripts/${script.id}/permissions/${permissionId}`);
+                await authApi.delete(`/scripts/${script.id}/permissions/${permissionId}`);
                 loadPermissions();
             } catch (error) {
                 console.error('Failed to remove permission:', error);
@@ -185,7 +185,7 @@ export function ScriptShareDialog({script, isOpen, onClose, onUpdate}: ScriptSha
     const handleUpdatePermission = async (permissionId: number, newType: string) => {
         setLoading(true);
         try {
-            await axios.patch(`/scripts/${script.id}/permissions/${permissionId}`, {
+            await authApi.patch(`/scripts/${script.id}/permissions/${permissionId}`, {
                 permissionType: newType
             });
             loadPermissions();

@@ -28,7 +28,7 @@ import {
     RefreshCw
 } from "lucide-react";
 import {useTranslation} from "react-i18next";
-import axios from "axios";
+import {authApi} from "@/ui/main-axios.ts";
 
 interface ScriptExecutionDialogProps {
     script: Script;
@@ -105,7 +105,7 @@ export function ScriptExecutionDialog({script, isOpen, onClose}: ScriptExecution
 
     const loadSSHHosts = async () => {
         try {
-            const response = await axios.get('/ssh');
+            const response = await authApi.get('/ssh');
             setSshHosts(response.data);
             if (response.data.length > 0) {
                 setSelectedHost(response.data[0].id.toString());
@@ -192,7 +192,7 @@ export function ScriptExecutionDialog({script, isOpen, onClose}: ScriptExecution
 
             setExecutionProgress(10);
 
-            const response = await axios.post(`/scripts/${script.id}/execute`, {
+            const response = await authApi.post(`/scripts/${script.id}/execute`, {
                 hostId: parseInt(selectedHost),
                 parameters: parameterValues
             });

@@ -31,7 +31,7 @@ import {ScriptEditor} from "./ScriptEditor.tsx";
 import {ScriptCategoryTree} from "./ScriptCategoryTree.tsx";
 import {ScriptExecutionDialog} from "./ScriptExecutionDialog.tsx";
 import {ScriptShareDialog} from "./ScriptShareDialog.tsx";
-import axios from "axios";
+import {authApi} from "@/ui/main-axios.ts";
 
 interface ScriptLibraryProps {
     onSelectView: (view: string) => void;
@@ -47,6 +47,10 @@ interface Script {
     categoryId?: number;
     categoryName?: string;
     tags: string;
+    parameters?: string;
+    environment?: string;
+    timeout?: number;
+    retryCount?: number;
     isPublic: boolean;
     isTemplate: boolean;
     isFavorite: boolean;
@@ -58,6 +62,74 @@ interface Script {
     userId: string;
     userName: string;
 }
+
+const toStringSafe = (value: unknown, fallback = ''): string => {
+    if (typeof value === 'string') return value;
+    return fallback;
+};
+
+const toOptionalString = (value: unknown): string | undefined => {
+    if (typeof value === 'string') return value;
+    return undefined;
+};
+
+const toBooleanSafe = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+        const normalized = value.toLowerCase();
+        return normalized === 'true' || normalized === '1' || normalized === 'yes';
+    }
+    return false;
+};
+
+const toNumberSafe = (value: unknown, fallback = 0): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toOptionalNumber = (value: unknown): number | undefined => {
+    if (value === null || value === undefined) {
+        return undefined;
+    }
+    const parsed = toNumberSafe(value, Number.NaN);
+    return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeTags = (value: unknown): string => {
+    if (Array.isArray(value)) {
+        return JSON.stringify(value);
+    }
+    return toStringSafe(value, '[]');
+};
+
+const normalizeScript = (rawScript: Partial<Script> & Record<string, unknown>): Script => ({
+    id: toNumberSafe(rawScript.id, 0),
+    name: toStringSafe(rawScript.name),
+    description: toStringSafe(rawScript.description),
+    content: toOptionalString(rawScript.content),
+    language: toStringSafe(rawScript.language, 'bash'),
+    categoryId: toOptionalNumber(rawScript.categoryId),
+    categoryName: toOptionalString(rawScript.categoryName),
+    tags: normalizeTags(rawScript.tags),
+    parameters: toStringSafe(rawScript.parameters, '[]'),
+    environment: toStringSafe(rawScript.environment, '{}'),
+    timeout: toNumberSafe(rawScript.timeout, 300),
+    retryCount: toNumberSafe(rawScript.retryCount, 0),
+    isPublic: toBooleanSafe(rawScript.isPublic),
+    isTemplate: toBooleanSafe(rawScript.isTemplate),
+    isFavorite: toBooleanSafe(rawScript.isFavorite),
+    version: toStringSafe(rawScript.version, '1.0.0'),
+    lastExecuted: toOptionalString(rawScript.lastExecuted),
+    executionCount: toNumberSafe(rawScript.executionCount, 0),
+    createdAt: toStringSafe(rawScript.createdAt),
+    updatedAt: toStringSafe(rawScript.updatedAt),
+    userId: toStringSafe(rawScript.userId),
+    userName: toStringSafe(rawScript.userName)
+});
 
 interface Category {
     id: number;
@@ -110,11 +182,16 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
         let filtered = scripts;
 
         if (searchQuery) {
-            filtered = filtered.filter(script =>
-                script.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                script.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                script.tags.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            const normalizedQuery = searchQuery.toLowerCase();
+            filtered = filtered.filter(script => {
+                const nameMatch = script.name.toLowerCase().includes(normalizedQuery);
+                const descriptionMatch = script.description.toLowerCase().includes(normalizedQuery);
+                const tagsString = script.tags.toLowerCase();
+                const tagsMatch = tagsString.includes(normalizedQuery) ||
+                    parseTags(script.tags).some(tag => tag.toLowerCase().includes(normalizedQuery));
+
+                return nameMatch || descriptionMatch || tagsMatch;
+            });
         }
 
         setFilteredScripts(filtered);
@@ -136,11 +213,15 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
             if (showOnlyPublic) params.append('isPublic', 'true');
             if (showOnlyTemplates) params.append('isTemplate', 'true');
 
-            const response = await axios.get(`/scripts?${params.toString()}`);
-            setScripts(response.data.scripts);
-            setTotalPages(response.data.pagination.totalPages);
+            const response = await authApi.get(`/scripts?${params.toString()}`);
+            const normalizedScripts = (response.data.scripts || []).map((script: any) => normalizeScript(script));
+            setScripts(normalizedScripts);
+            setTotalPages(response.data.pagination?.totalPages || 1);
         } catch (error) {
             console.error('Failed to load scripts:', error);
+            // Set defaults on error
+            setScripts([]);
+            setTotalPages(1);
         } finally {
             setLoading(false);
         }
@@ -148,7 +229,7 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
 
     const loadCategories = async () => {
         try {
-            const response = await axios.get('/scripts/categories');
+            const response = await authApi.get('/scripts/categories');
             setCategories(response.data);
         } catch (error) {
             console.error('Failed to load categories:', error);
@@ -157,8 +238,8 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
 
     const handleScriptSelect = async (script: Script) => {
         try {
-            const response = await axios.get(`/scripts/${script.id}`);
-            setSelectedScript(response.data);
+            const response = await authApi.get(`/scripts/${script.id}`);
+            setSelectedScript(normalizeScript(response.data));
         } catch (error) {
             console.error('Failed to load script details:', error);
         }
@@ -170,24 +251,24 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
     };
 
     const handleScriptEdit = (script: Script) => {
-        setSelectedScript(script);
+        setSelectedScript(normalizeScript(script));
         setIsEditorOpen(true);
     };
 
     const handleScriptExecute = (script: Script) => {
-        setSelectedScript(script);
+        setSelectedScript(normalizeScript(script));
         setIsExecutionDialogOpen(true);
     };
 
     const handleScriptShare = (script: Script) => {
-        setSelectedScript(script);
+        setSelectedScript(normalizeScript(script));
         setIsShareDialogOpen(true);
     };
 
     const handleScriptDelete = async (script: Script) => {
         if (confirm(t('script.confirmDelete', {name: script.name}))) {
             try {
-                await axios.delete(`/scripts/${script.id}`);
+                await authApi.delete(`/scripts/${script.id}`);
                 loadScripts();
             } catch (error) {
                 console.error('Failed to delete script:', error);
@@ -197,7 +278,7 @@ export function ScriptLibrary({onSelectView, isTopbarOpen}: ScriptLibraryProps):
 
     const handleToggleFavorite = async (script: Script) => {
         try {
-            await axios.patch(`/scripts/${script.id}`, {
+            await authApi.patch(`/scripts/${script.id}`, {
                 isFavorite: !script.isFavorite
             });
             loadScripts();

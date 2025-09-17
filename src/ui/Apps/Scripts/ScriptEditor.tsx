@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {CodeMirror} from "@/components/ui/codemirror.tsx";
-import axios from "axios";
+import {authApi} from "@/ui/main-axios.ts";
 
 interface ScriptEditorProps {
     script?: Script | null;
@@ -151,7 +151,7 @@ export function ScriptEditor({script, isOpen, onClose, onSave}: ScriptEditorProp
 
     const loadCategories = async () => {
         try {
-            const response = await axios.get('/scripts/categories');
+            const response = await authApi.get('/scripts/categories');
             setCategories(response.data);
         } catch (error) {
             console.error('Failed to load categories:', error);
@@ -259,9 +259,9 @@ export function ScriptEditor({script, isOpen, onClose, onSave}: ScriptEditorProp
             };
 
             if (script?.id) {
-                await axios.put(`/scripts/${script.id}`, payload);
+                await authApi.put(`/scripts/${script.id}`, payload);
             } else {
-                await axios.post('/scripts', payload);
+                await authApi.post('/scripts', payload);
             }
 
             onSave();

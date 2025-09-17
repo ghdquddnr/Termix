@@ -3,7 +3,7 @@ import {
     Computer,
     Server,
     File,
-    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity, Cog, Network
+    Hammer, ChevronUp, User2, HardDrive, Trash2, Users, Shield, Settings, Menu, ChevronRight, Activity, Cog, Network, FileText
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -186,6 +186,17 @@ export function LeftSidebar({
             return;
         }
         const id = addTab({ type: 'log_viewer', title: '로그 뷰어' } as any);
+        setCurrentTab(id);
+    };
+
+    const scriptLibraryTab = tabList.find((t: any) => t.type === 'script_library');
+    const openScriptLibraryTab = () => {
+        if (isSplitScreenActive) return;
+        if (scriptLibraryTab) {
+            setCurrentTab(scriptLibraryTab.id);
+            return;
+        }
+        const id = addTab({ type: 'script_library', title: '스크립트 라이브러리' } as any);
         setCurrentTab(id);
     };
 
@@ -401,6 +412,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <File strokeWidth="2.5"/>
                                 로그 뷰어
+                            </Button>
+                            <Button className={getButtonClassName('script_library')} variant={getButtonVariant('script_library')}
+                                    onClick={openScriptLibraryTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <FileText strokeWidth="2.5"/>
+                                스크립트 라이브러리
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

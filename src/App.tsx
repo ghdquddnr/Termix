@@ -89,7 +89,11 @@ function AppContent() {
     }
 
     const currentTabData = tabs.find(tab => tab.id === currentTab);
-    const showTerminalView = currentTabData?.type === 'terminal' || currentTabData?.type === 'server' || currentTabData?.type === 'file_manager' || currentTabData?.type === 'log_viewer';
+    const showTerminalView = currentTabData?.type === 'terminal'
+        || currentTabData?.type === 'server'
+        || currentTabData?.type === 'file_manager'
+        || currentTabData?.type === 'log_viewer'
+        || currentTabData?.type === 'script_library';
     const showHome = currentTabData?.type === 'home';
     const showSshManager = currentTabData?.type === 'ssh_manager';
     const showAdmin = currentTabData?.type === 'admin';

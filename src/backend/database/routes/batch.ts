@@ -51,7 +51,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'default-secret', (err: any, user: any) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err: any, user: any) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid token' });
     }
@@ -67,6 +67,18 @@ const handleError = (res: express.Response, error: unknown, message: string) => 
     error: message,
     details: error instanceof Error ? error.message : String(error)
   });
+};
+
+const safeParseStringArray = (value: unknown): string[] => {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
 };
 
 // Server Groups API
@@ -108,7 +120,7 @@ router.get('/groups', authenticateToken, async (req: any, res) => {
         return {
           ...group,
           memberCount: memberCount,
-          tags: group.tags ? JSON.parse(group.tags) : []
+          tags: safeParseStringArray(group.tags)
         };
       })
     );
@@ -149,7 +161,7 @@ router.post('/groups', authenticateToken, async (req: any, res) => {
         description: description?.trim() || null,
         color: color || '#6B7280',
         icon: icon || 'server',
-        tags: tags && Array.isArray(tags) ? JSON.stringify(tags) : null,
+          tags: tags && Array.isArray(tags) ? JSON.stringify(tags) : null,
         isDefault: isDefault || false,
       })
       .returning();
@@ -298,7 +310,7 @@ router.get('/groups/:groupId/members', authenticateToken, async (req: any, res) 
     logger.info(`Retrieved ${members.length} members for group ${groupId}`);
     res.json(members.map(member => ({
       ...member,
-      tags: member.tags ? JSON.parse(member.tags) : []
+          tags: safeParseStringArray(member.tags)
     })));
   } catch (error) {
     handleError(res, error, 'Failed to retrieve group members');
@@ -579,7 +591,7 @@ router.get('/templates', authenticateToken, async (req: any, res) => {
     logger.info(`Retrieved ${templates.length} batch templates for user ${userId}`);
     res.json(templates.map(template => ({
       ...template,
-      tags: template.tags ? JSON.parse(template.tags) : []
+      tags: safeParseStringArray(template.tags)
     })));
   } catch (error) {
     handleError(res, error, 'Failed to retrieve batch templates');

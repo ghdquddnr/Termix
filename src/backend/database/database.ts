@@ -249,7 +249,7 @@ app.use('/monitoring', monitoringRoutes);
 app.use('/services', servicesRoutes);
 app.use('/logs', logsRoutes);
 app.use('/scripts', scriptsRoutes);
-app.use('/batch', batchRoutes);
+app.use('/api/batch', batchRoutes);
 
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', err);

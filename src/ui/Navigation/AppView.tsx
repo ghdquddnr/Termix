@@ -595,15 +595,6 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     // 로그 뷰어 탭이 하나라도 있거나 활성화되어 있으면 인라인 렌더링 사용
     const shouldShowLogViewer = isInlineLogViewer || logViewerTabExists || hasLogViewerTab || currentTabIsLogViewer || isLogViewerActive;
 
-    // 디버깅을 위한 콘솔 로그
-    console.log('AppView Debug:', {
-        shouldShowLogViewer,
-        currentTabData,
-        isInlineLogViewer,
-        logViewerTabExists,
-        hasLogViewerTab
-    });
-    
     const topMarginPx = isTopbarOpen ? 74 : 26;
     const leftMarginPx = sidebarState === 'collapsed' ? 26 : 8;
     const bottomMarginPx = 8;

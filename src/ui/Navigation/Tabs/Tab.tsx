@@ -277,6 +277,32 @@ export function Tab({
         );
     }
 
+    if (tabType === "batch_execution") {
+        return (
+            <ButtonGroup>
+                <Button
+                    variant="outline"
+                    className={`!px-2 border-1 border-[#303032] ${isActive ? '!bg-[#1d1d1f] !text-white !border-[#2d2d30]' : ''}`}
+                    onClick={onActivate}
+                    disabled={disableActivate}
+                >
+                    <ServerIcon className="mr-1 h-4 w-4" />
+                    {title || '배치 실행'}
+                </Button>
+                {canClose && (
+                    <Button
+                        variant="outline"
+                        className="!px-2 border-1 border-[#303032]"
+                        onClick={onClose}
+                        disabled={disableClose}
+                    >
+                        <X/>
+                    </Button>
+                )}
+            </ButtonGroup>
+        );
+    }
+
     if (tabType === "admin") {
         return (
             <ButtonGroup>

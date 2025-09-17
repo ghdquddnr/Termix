@@ -93,7 +93,8 @@ function AppContent() {
         || currentTabData?.type === 'server'
         || currentTabData?.type === 'file_manager'
         || currentTabData?.type === 'log_viewer'
-        || currentTabData?.type === 'script_library';
+        || currentTabData?.type === 'script_library'
+        || currentTabData?.type === 'batch_execution';
     const showHome = currentTabData?.type === 'home';
     const showSshManager = currentTabData?.type === 'ssh_manager';
     const showAdmin = currentTabData?.type === 'admin';

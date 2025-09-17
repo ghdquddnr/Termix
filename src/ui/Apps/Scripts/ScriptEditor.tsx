@@ -275,7 +275,6 @@ export function ScriptEditor({script, isOpen, onClose, onSave}: ScriptEditorProp
 
     const handleTest = () => {
         // TODO: Implement script testing functionality
-        console.log('Test script functionality to be implemented');
     };
 
     const getLanguageMode = (language: string) => {

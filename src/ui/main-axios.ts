@@ -1520,12 +1520,12 @@ export interface ServerGroupMember {
 }
 
 // Create batch execution API instance
-const batchApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+const batchApi = createApiInstance(isDev ? 'http://localhost:8081/api/batch' : '/api/batch');
 
 // Server Groups API
 export async function getServerGroups(): Promise<ServerGroup[]> {
   try {
-    const response = await batchApi.get('/api/batch/groups');
+    const response = await batchApi.get('/groups');
     return response.data;
   } catch (error) {
     handleApiError(error, 'fetch server groups');
@@ -1542,7 +1542,7 @@ export async function createServerGroup(groupData: {
   isDefault?: boolean;
 }): Promise<ServerGroup> {
   try {
-    const response = await batchApi.post('/api/batch/groups', groupData);
+    const response = await batchApi.post('/groups', groupData);
     return response.data;
   } catch (error) {
     handleApiError(error, 'create server group');
@@ -1559,7 +1559,7 @@ export async function updateServerGroup(groupId: number, groupData: {
   isDefault?: boolean;
 }): Promise<ServerGroup> {
   try {
-    const response = await batchApi.put(`/api/batch/groups/${groupId}`, groupData);
+    const response = await batchApi.put(`/groups/${groupId}`, groupData);
     return response.data;
   } catch (error) {
     handleApiError(error, 'update server group');
@@ -1569,7 +1569,7 @@ export async function updateServerGroup(groupId: number, groupData: {
 
 export async function deleteServerGroup(groupId: number): Promise<{ message: string }> {
   try {
-    const response = await batchApi.delete(`/api/batch/groups/${groupId}`);
+    const response = await batchApi.delete(`/groups/${groupId}`);
     return response.data;
   } catch (error) {
     handleApiError(error, 'delete server group');
@@ -1579,7 +1579,7 @@ export async function deleteServerGroup(groupId: number): Promise<{ message: str
 
 export async function getServerGroupMembers(groupId: number): Promise<ServerGroupMember[]> {
   try {
-    const response = await batchApi.get(`/api/batch/groups/${groupId}/members`);
+    const response = await batchApi.get(`/groups/${groupId}/members`);
     return response.data;
   } catch (error) {
     handleApiError(error, 'fetch server group members');
@@ -1593,7 +1593,7 @@ export async function addServersToGroup(groupId: number, hostIds: number[]): Pro
   skippedCount: number;
 }> {
   try {
-    const response = await batchApi.post(`/api/batch/groups/${groupId}/members`, { hostIds });
+    const response = await batchApi.post(`/groups/${groupId}/members`, { hostIds });
     return response.data;
   } catch (error) {
     handleApiError(error, 'add servers to group');
@@ -1603,7 +1603,7 @@ export async function addServersToGroup(groupId: number, hostIds: number[]): Pro
 
 export async function removeServerFromGroup(groupId: number, hostId: number): Promise<{ message: string }> {
   try {
-    const response = await batchApi.delete(`/api/batch/groups/${groupId}/members/${hostId}`);
+    const response = await batchApi.delete(`/groups/${groupId}/members/${hostId}`);
     return response.data;
   } catch (error) {
     handleApiError(error, 'remove server from group');
@@ -1614,7 +1614,7 @@ export async function removeServerFromGroup(groupId: number, hostId: number): Pr
 // Batch Execution API
 export async function createBatchExecution(request: BatchExecutionRequest): Promise<BatchExecution> {
   try {
-    const response = await batchApi.post('/api/batch/execute', request);
+    const response = await batchApi.post('/execute', request);
     return response.data;
   } catch (error) {
     handleApiError(error, 'create batch execution');
@@ -1624,7 +1624,7 @@ export async function createBatchExecution(request: BatchExecutionRequest): Prom
 
 export async function getBatchExecutions(page = 1, limit = 20): Promise<BatchExecution[]> {
   try {
-    const response = await batchApi.get('/api/batch/executions', {
+    const response = await batchApi.get('/executions', {
       params: { page, limit }
     });
     return response.data;
@@ -1636,7 +1636,7 @@ export async function getBatchExecutions(page = 1, limit = 20): Promise<BatchExe
 
 export async function getBatchExecutionDetails(executionId: number): Promise<BatchExecution> {
   try {
-    const response = await batchApi.get(`/api/batch/executions/${executionId}`);
+    const response = await batchApi.get(`/executions/${executionId}`);
     return response.data;
   } catch (error) {
     handleApiError(error, 'fetch batch execution details');
@@ -1646,7 +1646,7 @@ export async function getBatchExecutionDetails(executionId: number): Promise<Bat
 
 export async function cancelBatchExecution(executionId: number): Promise<{ message: string }> {
   try {
-    const response = await batchApi.post(`/api/batch/executions/${executionId}/cancel`);
+    const response = await batchApi.post(`/executions/${executionId}/cancel`);
     return response.data;
   } catch (error) {
     handleApiError(error, 'cancel batch execution');
@@ -1657,7 +1657,7 @@ export async function cancelBatchExecution(executionId: number): Promise<{ messa
 // Batch Templates API
 export async function getBatchTemplates(): Promise<BatchTemplate[]> {
   try {
-    const response = await batchApi.get('/api/batch/templates');
+    const response = await batchApi.get('/templates');
     return response.data;
   } catch (error) {
     handleApiError(error, 'fetch batch templates');
@@ -1676,7 +1676,7 @@ export async function createBatchTemplate(templateData: {
   isPublic?: boolean;
 }): Promise<BatchTemplate> {
   try {
-    const response = await batchApi.post('/api/batch/templates', templateData);
+    const response = await batchApi.post('/templates', templateData);
     return response.data;
   } catch (error) {
     handleApiError(error, 'create batch template');

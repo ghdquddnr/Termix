@@ -536,6 +536,146 @@ const migrateSchema = () => {
         logger.warn('Failed to create some log table indexes');
     }
 
+    // Batch execution system tables migration
+    try {
+        sqlite.prepare('SELECT 1 FROM server_groups LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE server_groups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                color TEXT DEFAULT '#6B7280',
+                icon TEXT DEFAULT 'server',
+                tags TEXT,
+                is_default INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create server_groups table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM server_group_members LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE server_group_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id INTEGER NOT NULL,
+                host_id INTEGER NOT NULL,
+                added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(group_id) REFERENCES server_groups(id),
+                FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create server_group_members table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM batch_executions LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE batch_executions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT,
+                description TEXT,
+                command TEXT NOT NULL,
+                server_group_id INTEGER,
+                target_hosts TEXT,
+                execution_type TEXT NOT NULL DEFAULT 'parallel',
+                timeout INTEGER DEFAULT 300,
+                retry_count INTEGER DEFAULT 0,
+                retry_delay INTEGER DEFAULT 5,
+                stop_on_first_error INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'pending',
+                total_hosts INTEGER DEFAULT 0,
+                completed_hosts INTEGER DEFAULT 0,
+                failed_hosts INTEGER DEFAULT 0,
+                start_time TEXT,
+                end_time TEXT,
+                duration INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(server_group_id) REFERENCES server_groups(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create batch_executions table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM batch_execution_results LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE batch_execution_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                batch_id INTEGER NOT NULL,
+                host_id INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                exit_code INTEGER,
+                output TEXT,
+                error_output TEXT,
+                retry_attempt INTEGER DEFAULT 0,
+                start_time TEXT,
+                end_time TEXT,
+                duration INTEGER,
+                error TEXT,
+                FOREIGN KEY(batch_id) REFERENCES batch_executions(id),
+                FOREIGN KEY(host_id) REFERENCES ssh_data(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create batch_execution_results table');
+        }
+    }
+
+    try {
+        sqlite.prepare('SELECT 1 FROM batch_templates LIMIT 1').get();
+    } catch (e) {
+        try {
+            sqlite.exec(`CREATE TABLE batch_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                command TEXT NOT NULL,
+                default_timeout INTEGER DEFAULT 300,
+                default_retry_count INTEGER DEFAULT 0,
+                default_execution_type TEXT DEFAULT 'parallel',
+                tags TEXT,
+                is_public INTEGER NOT NULL DEFAULT 0,
+                usage_count INTEGER DEFAULT 0,
+                last_used TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            );`);
+        } catch (e2) {
+            logger.warn('Failed to create batch_templates table');
+        }
+    }
+
+    try {
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_server_groups_user_id ON server_groups(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_server_groups_name ON server_groups(name)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_server_group_members_group_id ON server_group_members(group_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_server_group_members_host_id ON server_group_members(host_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_executions_user_id ON batch_executions(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_executions_status ON batch_executions(status)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_execution_results_batch_id ON batch_execution_results(batch_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_execution_results_host_id ON batch_execution_results(host_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_templates_user_id ON batch_templates(user_id)`);
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_batch_templates_name ON batch_templates(name)`);
+    } catch (e) {
+        logger.warn('Failed to create some batch execution indexes');
+    }
+
     // Script repository system tables migration
     try {
         sqlite.prepare('SELECT 1 FROM script_categories LIMIT 1').get();

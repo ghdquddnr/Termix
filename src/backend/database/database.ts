@@ -8,6 +8,7 @@ import monitoringRoutes from './routes/monitoring.js';
 import logsRoutes from './routes/logs.js';
 import servicesRoutes from './routes/services.js';
 import scriptsRoutes from './routes/scripts.js';
+import batchRoutes from './routes/batch.js';
 import chalk from 'chalk';
 import cors from 'cors';
 import fetch from 'node-fetch';
@@ -248,6 +249,7 @@ app.use('/monitoring', monitoringRoutes);
 app.use('/services', servicesRoutes);
 app.use('/logs', logsRoutes);
 app.use('/scripts', scriptsRoutes);
+app.use('/batch', batchRoutes);
 
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', err);

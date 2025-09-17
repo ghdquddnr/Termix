@@ -185,3 +185,81 @@ export const scriptExecutionHistory = sqliteTable('script_execution_history', {
     endTime: text('end_time'),
     duration: integer('duration'), // Execution time in milliseconds
 });
+
+// Batch Execution System Tables
+
+export const serverGroups = sqliteTable('server_groups', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    name: text('name').notNull(),
+    description: text('description'),
+    color: text('color').default('#6B7280'),
+    icon: text('icon').default('server'),
+    tags: text('tags'), // JSON array of tags
+    isDefault: integer('is_default', {mode: 'boolean'}).notNull().default(false),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const serverGroupMembers = sqliteTable('server_group_members', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    groupId: integer('group_id').notNull().references(() => serverGroups.id),
+    hostId: integer('host_id').notNull().references(() => sshData.id),
+    addedAt: text('added_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const batchExecutions = sqliteTable('batch_executions', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    name: text('name'),
+    description: text('description'),
+    command: text('command').notNull(),
+    serverGroupId: integer('server_group_id').references(() => serverGroups.id),
+    targetHosts: text('target_hosts'), // JSON array of host IDs if not using group
+    executionType: text('execution_type').notNull().default('parallel'), // 'parallel', 'sequential'
+    timeout: integer('timeout').default(300), // Execution timeout in seconds
+    retryCount: integer('retry_count').default(0),
+    retryDelay: integer('retry_delay').default(5), // Retry delay in seconds
+    stopOnFirstError: integer('stop_on_first_error', {mode: 'boolean'}).notNull().default(false),
+    status: text('status').notNull().default('pending'), // 'pending', 'running', 'completed', 'failed', 'cancelled'
+    totalHosts: integer('total_hosts').default(0),
+    completedHosts: integer('completed_hosts').default(0),
+    failedHosts: integer('failed_hosts').default(0),
+    startTime: text('start_time'),
+    endTime: text('end_time'),
+    duration: integer('duration'), // Total execution time in milliseconds
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const batchExecutionResults = sqliteTable('batch_execution_results', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    batchId: integer('batch_id').notNull().references(() => batchExecutions.id),
+    hostId: integer('host_id').notNull().references(() => sshData.id),
+    status: text('status').notNull(), // 'pending', 'running', 'completed', 'failed', 'timeout', 'cancelled'
+    exitCode: integer('exit_code'),
+    output: text('output'),
+    errorOutput: text('error_output'),
+    retryAttempt: integer('retry_attempt').default(0),
+    startTime: text('start_time'),
+    endTime: text('end_time'),
+    duration: integer('duration'), // Execution time in milliseconds
+    error: text('error'), // Connection or execution error details
+});
+
+export const batchTemplates = sqliteTable('batch_templates', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull().references(() => users.id),
+    name: text('name').notNull(),
+    description: text('description'),
+    command: text('command').notNull(),
+    defaultTimeout: integer('default_timeout').default(300),
+    defaultRetryCount: integer('default_retry_count').default(0),
+    defaultExecutionType: text('default_execution_type').default('parallel'),
+    tags: text('tags'), // JSON array of tags
+    isPublic: integer('is_public', {mode: 'boolean'}).notNull().default(false),
+    usageCount: integer('usage_count').default(0),
+    lastUsed: text('last_used'),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});

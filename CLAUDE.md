@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Frontend Development
-- `npm run dev` - Start Vite development server (runs on http://localhost:5174)
+- `npm run dev` - Start Vite development server (runs on http://localhost:5173)
 - `npm run build` - Build frontend for production
 - `npm run lint` - Run ESLint for code quality checks
 - `npm run preview` - Preview production build locally

@@ -200,6 +200,17 @@ export function LeftSidebar({
         setCurrentTab(id);
     };
 
+    const batchExecutionTab = tabList.find((t: any) => t.type === 'batch_execution');
+    const openBatchExecutionTab = () => {
+        if (isSplitScreenActive) return;
+        if (batchExecutionTab) {
+            setCurrentTab(batchExecutionTab.id);
+            return;
+        }
+        const id = addTab({ type: 'batch_execution', title: '배치 실행' } as any);
+        setCurrentTab(id);
+    };
+
     // Helper functions to check if tabs are active
     const isTabActive = (tabType: string) => {
         const tab = tabList.find((t: any) => t.type === tabType);
@@ -418,6 +429,12 @@ export function LeftSidebar({
                                     title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
                                 <FileText strokeWidth="2.5"/>
                                 스크립트 라이브러리
+                            </Button>
+                            <Button className={getButtonClassName('batch_execution')} variant={getButtonVariant('batch_execution')}
+                                    onClick={openBatchExecutionTab} disabled={isSplitScreenActive}
+                                    title={isSplitScreenActive ? t('interface.disabledDuringSplitScreen') : undefined}>
+                                <Server strokeWidth="2.5"/>
+                                배치 실행
                             </Button>
                         </SidebarGroup>
                         <Separator className="p-0.25"/>

@@ -8,6 +8,7 @@ import {NetworkMonitor} from "@/ui/Apps/Network Monitor/NetworkMonitor.tsx";
 import {DiskMonitor} from "@/ui/Apps/Disk Monitor/DiskMonitor.tsx";
 import LogsApp from "@/ui/Apps/Logs/LogsApp.tsx";
 import {ScriptLibrary} from "@/ui/Apps/Scripts/ScriptLibrary.tsx";
+import {BatchExecution} from "@/ui/Apps/Batch/BatchExecution.tsx";
 import {useTabs} from "@/ui/Navigation/Tabs/TabContext.tsx";
 import {ResizablePanelGroup, ResizablePanel, ResizableHandle} from '@/components/ui/resizable.tsx';
 import * as ResizablePrimitive from "react-resizable-panels";
@@ -23,7 +24,7 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
     const {tabs, currentTab, allSplitScreenTab} = useTabs() as any;
     const {state: sidebarState} = useSidebar();
 
-    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor' || tab.type === 'disk_monitor' || tab.type === 'log_viewer' || tab.type === 'script_library');
+    const terminalTabs = tabs.filter((tab: any) => tab.type === 'terminal' || tab.type === 'server' || tab.type === 'file_manager' || tab.type === 'process_monitor' || tab.type === 'service_manager' || tab.type === 'network_monitor' || tab.type === 'disk_monitor' || tab.type === 'log_viewer' || tab.type === 'script_library' || tab.type === 'batch_execution');
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -222,6 +223,11 @@ export function AppView({isTopbarOpen = true}: TerminalViewProps): React.ReactEl
                                     />
                                 ) : t.type === 'script_library' ? (
                                     <ScriptLibrary
+                                        onSelectView={() => {}}
+                                        isTopbarOpen={isTopbarOpen}
+                                    />
+                                ) : t.type === 'batch_execution' ? (
+                                    <BatchExecution
                                         onSelectView={() => {}}
                                         isTopbarOpen={isTopbarOpen}
                                     />

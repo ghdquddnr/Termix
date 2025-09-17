@@ -1419,3 +1419,267 @@ export async function getServiceStatistics(hostId: number): Promise<{
         handleApiError(error, 'fetch service statistics');
     }
 }
+
+// ============================================================================
+// BATCH EXECUTION
+// ============================================================================
+
+// Batch execution types
+export interface BatchExecutionRequest {
+  userId?: string;
+  name?: string | null;
+  description?: string | null;
+  command: string;
+  serverGroupId?: number | null;
+  targetHosts?: number[] | null;
+  executionType: 'parallel' | 'sequential';
+  timeout: number;
+  retryCount: number;
+  retryDelay: number;
+  stopOnFirstError: boolean;
+}
+
+export interface HostExecutionResult {
+  id: number;
+  hostId: number;
+  hostName: string;
+  hostIp: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'timeout' | 'cancelled';
+  exitCode?: number | null;
+  output?: string;
+  errorOutput?: string;
+  retryAttempt: number;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  error?: string;
+}
+
+export interface BatchExecution {
+  id: number;
+  userId: string;
+  name?: string | null;
+  description?: string | null;
+  command: string;
+  serverGroupId?: number | null;
+  targetHosts?: number[] | null;
+  executionType: 'parallel' | 'sequential';
+  timeout: number;
+  retryCount: number;
+  retryDelay: number;
+  stopOnFirstError: boolean;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  totalHosts: number;
+  completedHosts: number;
+  failedHosts: number;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  results?: HostExecutionResult[];
+}
+
+export interface BatchTemplate {
+  id: number;
+  userId: string;
+  name: string;
+  description?: string | null;
+  command: string;
+  defaultTimeout: number;
+  defaultRetryCount: number;
+  defaultExecutionType: 'parallel' | 'sequential';
+  tags?: string[];
+  isPublic: boolean;
+  usageCount: number;
+  lastUsed?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServerGroup {
+  id: number;
+  name: string;
+  description?: string | null;
+  color: string;
+  icon: string;
+  tags?: string[];
+  isDefault: boolean;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServerGroupMember {
+  id: number;
+  name: string;
+  ip: string;
+  port: number;
+  username: string;
+  folder?: string | null;
+  tags?: string[];
+  addedAt: string;
+}
+
+// Create batch execution API instance
+const batchApi = createApiInstance(isDev ? 'http://localhost:8081' : '');
+
+// Server Groups API
+export async function getServerGroups(): Promise<ServerGroup[]> {
+  try {
+    const response = await batchApi.get('/api/batch/groups');
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'fetch server groups');
+    throw error;
+  }
+}
+
+export async function createServerGroup(groupData: {
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  tags?: string[];
+  isDefault?: boolean;
+}): Promise<ServerGroup> {
+  try {
+    const response = await batchApi.post('/api/batch/groups', groupData);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'create server group');
+    throw error;
+  }
+}
+
+export async function updateServerGroup(groupId: number, groupData: {
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  tags?: string[];
+  isDefault?: boolean;
+}): Promise<ServerGroup> {
+  try {
+    const response = await batchApi.put(`/api/batch/groups/${groupId}`, groupData);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'update server group');
+    throw error;
+  }
+}
+
+export async function deleteServerGroup(groupId: number): Promise<{ message: string }> {
+  try {
+    const response = await batchApi.delete(`/api/batch/groups/${groupId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'delete server group');
+    throw error;
+  }
+}
+
+export async function getServerGroupMembers(groupId: number): Promise<ServerGroupMember[]> {
+  try {
+    const response = await batchApi.get(`/api/batch/groups/${groupId}/members`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'fetch server group members');
+    throw error;
+  }
+}
+
+export async function addServersToGroup(groupId: number, hostIds: number[]): Promise<{
+  message: string;
+  addedCount: number;
+  skippedCount: number;
+}> {
+  try {
+    const response = await batchApi.post(`/api/batch/groups/${groupId}/members`, { hostIds });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'add servers to group');
+    throw error;
+  }
+}
+
+export async function removeServerFromGroup(groupId: number, hostId: number): Promise<{ message: string }> {
+  try {
+    const response = await batchApi.delete(`/api/batch/groups/${groupId}/members/${hostId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'remove server from group');
+    throw error;
+  }
+}
+
+// Batch Execution API
+export async function createBatchExecution(request: BatchExecutionRequest): Promise<BatchExecution> {
+  try {
+    const response = await batchApi.post('/api/batch/execute', request);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'create batch execution');
+    throw error;
+  }
+}
+
+export async function getBatchExecutions(page = 1, limit = 20): Promise<BatchExecution[]> {
+  try {
+    const response = await batchApi.get('/api/batch/executions', {
+      params: { page, limit }
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'fetch batch executions');
+    throw error;
+  }
+}
+
+export async function getBatchExecutionDetails(executionId: number): Promise<BatchExecution> {
+  try {
+    const response = await batchApi.get(`/api/batch/executions/${executionId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'fetch batch execution details');
+    throw error;
+  }
+}
+
+export async function cancelBatchExecution(executionId: number): Promise<{ message: string }> {
+  try {
+    const response = await batchApi.post(`/api/batch/executions/${executionId}/cancel`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'cancel batch execution');
+    throw error;
+  }
+}
+
+// Batch Templates API
+export async function getBatchTemplates(): Promise<BatchTemplate[]> {
+  try {
+    const response = await batchApi.get('/api/batch/templates');
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'fetch batch templates');
+    throw error;
+  }
+}
+
+export async function createBatchTemplate(templateData: {
+  name: string;
+  description?: string;
+  command: string;
+  defaultTimeout?: number;
+  defaultRetryCount?: number;
+  defaultExecutionType?: 'parallel' | 'sequential';
+  tags?: string[];
+  isPublic?: boolean;
+}): Promise<BatchTemplate> {
+  try {
+    const response = await batchApi.post('/api/batch/templates', templateData);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'create batch template');
+    throw error;
+  }
+}

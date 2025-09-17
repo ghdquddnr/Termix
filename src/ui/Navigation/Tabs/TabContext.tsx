@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 
 export interface Tab {
     id: number;
-    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager' | 'theme_settings' | 'process_monitor' | 'service_manager' | 'network_monitor' | 'disk_monitor' | 'log_viewer' | 'script_library';
+    type: 'home' | 'terminal' | 'ssh_manager' | 'server' | 'admin' | 'file_manager' | 'theme_settings' | 'process_monitor' | 'service_manager' | 'network_monitor' | 'disk_monitor' | 'log_viewer' | 'script_library' | 'batch_execution';
     title: string;
     hostConfig?: any;
     terminalRef?: React.RefObject<any>;
@@ -51,7 +51,8 @@ export function TabProvider({children}: TabProviderProps) {
                           (tabType === 'network_monitor' ? '네트워크 모니터링' :
                           (tabType === 'disk_monitor' ? '디스크 모니터링' :
                           (tabType === 'log_viewer' ? '로그 뷰어' :
-                          (tabType === 'script_library' ? '스크립트 라이브러리' : t('nav.terminal'))))))));
+                          (tabType === 'script_library' ? '스크립트 라이브러리' :
+                          (tabType === 'batch_execution' ? '배치 실행' : t('nav.terminal')))))))));
         const baseTitle = (desiredTitle || defaultTitle).trim();
         const match = baseTitle.match(/^(.*) \((\d+)\)$/);
         const root = match ? match[1] : baseTitle;
